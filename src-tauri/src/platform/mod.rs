@@ -1,6 +1,7 @@
 //! Platforma özel kodlar. Her platformun kendi modülü var; diğerlerinde güvenli yedekler.
 
 pub mod audio;
+pub mod clipboard;
 
 #[cfg(target_os = "macos")]
 mod macos;

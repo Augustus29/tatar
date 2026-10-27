@@ -7,6 +7,9 @@
     "core:default",
     "core:window:allow-start-dragging",
     "opener:default",
-    "notification:default"
+    "notification:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "global-shortcut:allow-is-registered"
   ]
 }

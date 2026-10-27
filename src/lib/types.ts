@@ -142,4 +142,6 @@ export interface EventMap {
   'transfers-changed': Transfer[];
   'clipboard-history-changed': ClipItem[];
   'settings-changed': Settings;
+  /** Genel kısayol tetiklendi (yalnızca ana pencereye gelir; Rust kendi yaptıklarını bildirmez) */
+  shortcut: { id: ShortcutId };
 }

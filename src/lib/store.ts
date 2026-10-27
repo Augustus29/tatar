@@ -113,6 +113,12 @@ async function init(): Promise<void> {
   onApiEvent('transfers-changed', (transfers) => set({ transfers }));
   onApiEvent('clipboard-history-changed', (clipboard) => set({ clipboard }));
   onApiEvent('settings-changed', (settings) => set({ settings }));
+  onApiEvent('shortcut', ({ id }) => {
+    const device = state.paired.find((d) => d.reachable);
+    if (!device) return;
+    if (id === 'findDev') void actions.ringDevice(device.id);
+    else if (id === 'sendFile') void actions.pickAndSend(device.id);
+  });
 
   const [devices, transfers, clipboard, settings] = await Promise.all([
     api.listDevices(),
