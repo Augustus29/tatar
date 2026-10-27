@@ -42,6 +42,15 @@ impl log::Log for Logger {
     fn flush(&self) {}
 }
 
+/// Ağdan gelen, saldırgan denetiminde olabilecek kısa bir dizeyi (ör. paket türü) loglamak için
+/// güvenli hale getirir: en çok 48 karakter, kontrol karakterleri `?` olur.
+pub fn clean(s: &str) -> String {
+    s.chars()
+        .take(48)
+        .map(|c| if c.is_control() { '?' } else { c })
+        .collect()
+}
+
 pub fn init() {
     if log::set_logger(&LOGGER).is_ok() {
         log::set_max_level(if cfg!(debug_assertions) {
@@ -64,6 +73,14 @@ pub fn recent() -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn clean_truncates_and_strips_controls() {
+        let long = format!("a\u{7}{}", "b".repeat(200));
+        let c = super::clean(&long);
+        assert_eq!(c.chars().count(), 48);
+        assert!(c.starts_with("a?"));
+    }
+
     #[test]
     fn newline_is_flattened() {
         super::init();

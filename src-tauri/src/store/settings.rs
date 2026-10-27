@@ -72,7 +72,8 @@ impl Default for Settings {
             device_name: String::new(),
             share_battery: true,
             auto_connect: true,
-            onboarded: true,
+            // Taze kurulumda ilk açılış akışı gösterilir (arayüz, yüklenmeden önce `true` varsayar).
+            onboarded: false,
         }
     }
 }
@@ -213,7 +214,7 @@ mod tests {
             serde_json::json!(["⇧", "⌘", "C"])
         );
         assert_eq!(v["deviceName"], "");
-        assert_eq!(v["onboarded"], true);
+        assert_eq!(v["onboarded"], false);
     }
 
     #[test]

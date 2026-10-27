@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { useI18n } from '../i18n';
-import { formatShortcut } from '../lib/platform';
+import { formatShortcut, inTauri } from '../lib/platform';
 import { call, onDragDrop } from '../lib/tauri';
 import { shortAgo } from '../lib/format';
 import { actions, selectPairedDevices, useStore } from '../lib/store';
@@ -106,6 +106,8 @@ export function Popover() {
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDrag(false);
+    // Tauri'de bırakma yerel pencere olayıyla gelir (onDragDrop); burası yalnızca tarayıcı önizlemesi.
+    if (inTauri) return;
     const files = Array.from(e.dataTransfer?.files ?? []);
     if (device && online && files.length > 0) {
       void actions.sendFiles(

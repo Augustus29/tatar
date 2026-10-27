@@ -35,6 +35,7 @@
  *  open_system_settings                          { target: 'firewall' | 'localNetwork' } void
  *  request_local_network                         –                                   boolean        (macOS yerel ağ izni; Windows'ta true)
  *  app_info                                      –                                   { version: string }
+ *  get_diagnostic_log                            –                                   string         (gizli "Tanılama günlüğünü kopyala"; içerik/anahtar yok)
  *
  * OLAYLAR (Rust → UI)                            payload
  *  devices-changed                               Device[]                (tam liste)
@@ -156,6 +157,9 @@ export const api = {
   },
   async requestLocalNetwork(): Promise<boolean> {
     return (await run<boolean>('request_local_network', undefined, () => true)) ?? false;
+  },
+  async getDiagnosticLog(): Promise<string> {
+    return (await run<string>('get_diagnostic_log', undefined, () => 'Tatar tanılama günlüğü (önizleme): kayıt yok')) ?? '';
   },
   async appVersion(): Promise<string> {
     return (await run<{ version: string }>('app_info', undefined, () => ({ version: '0.1.0' })))?.version ?? '0.1.0';

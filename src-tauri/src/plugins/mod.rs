@@ -80,7 +80,7 @@ impl DeviceHandle {
         if !self.peer_incoming.contains(&packet.packet_type) {
             log::debug!(
                 "{} türü karşı tarafın yeteneklerinde yok, gönderilmedi",
-                packet.packet_type
+                crate::diag::clean(&packet.packet_type)
             );
             return false;
         }

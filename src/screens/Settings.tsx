@@ -392,14 +392,38 @@ function ShortcutsTab() {
 function AboutTab() {
   const { t } = useI18n();
   const [version, setVersion] = useState('0.1.0');
+  /** Gizli tanılama düğmesi: sürüm yazısına Option/Alt ile tıklayınca görünür. */
+  const [diag, setDiag] = useState(false);
+  const [diagMsg, setDiagMsg] = useState('');
   useEffect(() => {
     void api.appVersion().then(setVersion);
   }, []);
+  const copyDiag = async () => {
+    try {
+      await navigator.clipboard.writeText(await api.getDiagnosticLog());
+      setDiagMsg(t('settings.diagCopied'));
+    } catch {
+      setDiagMsg(t('settings.diagFailed'));
+    }
+    window.setTimeout(() => setDiagMsg(''), 2400);
+  };
   return (
     <section className="about">
       <BrandBadge size={96} radius={22} glyph={76} glow />
       <span className="nm">{t('app.name')}</span>
-      <span className="ver">{t('settings.version', { version })}</span>
+      <span className="ver" onClick={(e) => e.altKey && setDiag(true)}>
+        {t('settings.version', { version })}
+      </span>
+      {diag && (
+        <button type="button" className="btn btn-base lg glass sm btn-sec" onClick={() => void copyDiag()}>
+          {t('settings.diagCopy')}
+        </button>
+      )}
+      {diagMsg && (
+        <span role="status" style={{ fontSize: 12, color: 'var(--text2)' }}>
+          {diagMsg}
+        </span>
+      )}
       <p>{t('settings.aboutText')}</p>
       <span className="gh">{t('settings.github')}</span>
     </section>

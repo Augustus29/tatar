@@ -2,6 +2,7 @@
 
 pub mod audio;
 pub mod clipboard;
+pub mod netinfo;
 
 #[cfg(target_os = "macos")]
 mod macos;

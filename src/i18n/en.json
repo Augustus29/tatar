@@ -173,7 +173,10 @@
     "scShowHist": "Show clipboard history",
     "version": "Version {version}",
     "aboutText": "An open-source desktop client compatible with the KDE Connect protocol. Named after the Ottoman post couriers who carried news from station to station.",
-    "github": "github.com/Augustus29/tatar"
+    "github": "github.com/Augustus29/tatar",
+    "diagCopy": "Copy diagnostic log",
+    "diagCopied": "Diagnostic log copied to the clipboard.",
+    "diagFailed": "Could not copy the diagnostic log."
   },
   "states": {
     "lostLine": "Connection lost · reconnecting…",
@@ -316,6 +319,10 @@
     "pingTitle": "Ping",
     "pingBody": "Ping received from {device}.",
     "now": "now",
-    "minutesAgo": "{n} min ago"
+    "minutesAgo": "{n} min ago",
+    "textReceivedTitle": "Text received",
+    "textReceivedBody": "Text from {device} was copied to the clipboard.",
+    "urlReceivedTitle": "Link received",
+    "urlReceivedBody": "{device}: {url} (copied to the clipboard, not opened)"
   }
 }

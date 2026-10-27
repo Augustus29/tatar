@@ -1,39 +1,14 @@
-//! Rust tarafı bildirim metinleri (paylaşım). Arayüzdeki `notify.*` anahtarlarıyla aynı
-//! metinler; yalnızca Rust'ın gösterdiği bildirimler için. (Diğer eklentilerin metinleriyle
-//! sonradan tek bir yardımcıda birleştirilecek.)
+//! Paylaşım bildirimleri: metinler `src/i18n/*.json` içindeki `notify.*` anahtarlarından gelir
+//! (`crate::i18n`); burada yalnızca boyut biçimi ve yer tutucu doldurma vardır.
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Lang {
-    Tr,
-    En,
-}
-
-/// Ayardaki dil tercihinden ("system" | "tr" | "en") gerçek dili çıkarır.
-pub fn resolve(pref: &str) -> Lang {
-    match pref {
-        "tr" => Lang::Tr,
-        "en" => Lang::En,
-        _ => {
-            let loc = sys_locale::get_locale().unwrap_or_default().to_lowercase();
-            if loc.starts_with("tr") {
-                Lang::Tr
-            } else {
-                Lang::En
-            }
-        }
-    }
-}
+use crate::i18n::notify_text;
 
 /// Arayüzdeki `formatSize` ile aynı biçim: 4,2 MB / 4.2 MB, küçüklerde KB.
-pub fn format_size(lang: Lang, bytes: u64) -> String {
+pub fn format_size(lang: &str, bytes: u64) -> String {
     if bytes >= 1_048_576 {
         let v = bytes as f64 / 1_048_576.0;
         let s = format!("{v:.1}");
-        let s = if lang == Lang::Tr {
-            s.replace('.', ",")
-        } else {
-            s
-        };
+        let s = if lang == "tr" { s.replace('.', ",") } else { s };
         format!("{s} MB")
     } else {
         format!("{} KB", ((bytes as f64 / 1024.0).round() as u64).max(1))
@@ -41,49 +16,40 @@ pub fn format_size(lang: Lang, bytes: u64) -> String {
 }
 
 pub fn file_received(
-    lang: Lang,
+    lang: &str,
     device: &str,
     name: &str,
     size: u64,
     folder: &str,
 ) -> (String, String) {
     let size = format_size(lang, size);
-    match lang {
-        Lang::Tr => (
-            "Dosya alındı".into(),
-            format!("{device} cihazından {name} ({size}) {folder} klasörüne kaydedildi."),
+    (
+        notify_text(lang, "fileReceivedTitle", &[]),
+        notify_text(
+            lang,
+            "fileReceivedBody",
+            &[
+                ("device", device),
+                ("name", name),
+                ("size", &size),
+                ("folder", folder),
+            ],
         ),
-        Lang::En => (
-            "File received".into(),
-            format!("{name} ({size}) from {device} was saved to {folder}."),
-        ),
-    }
+    )
 }
 
-pub fn text_received(lang: Lang, device: &str) -> (String, String) {
-    match lang {
-        Lang::Tr => (
-            "Metin alındı".into(),
-            format!("{device} cihazından gelen metin panoya kopyalandı."),
-        ),
-        Lang::En => (
-            "Text received".into(),
-            format!("Text from {device} was copied to the clipboard."),
-        ),
-    }
+pub fn text_received(lang: &str, device: &str) -> (String, String) {
+    (
+        notify_text(lang, "textReceivedTitle", &[]),
+        notify_text(lang, "textReceivedBody", &[("device", device)]),
+    )
 }
 
-pub fn url_received(lang: Lang, device: &str, url: &str) -> (String, String) {
-    match lang {
-        Lang::Tr => (
-            "Bağlantı alındı".into(),
-            format!("{device}: {url} (panoya kopyalandı, açılmadı)"),
-        ),
-        Lang::En => (
-            "Link received".into(),
-            format!("{device}: {url} (copied to the clipboard, not opened)"),
-        ),
-    }
+pub fn url_received(lang: &str, device: &str, url: &str) -> (String, String) {
+    (
+        notify_text(lang, "urlReceivedTitle", &[]),
+        notify_text(lang, "urlReceivedBody", &[("device", device), ("url", url)]),
+    )
 }
 
 #[cfg(test)]
@@ -92,15 +58,23 @@ mod tests {
 
     #[test]
     fn sizes_match_ui_format() {
-        assert_eq!(format_size(Lang::Tr, 4_404_019), "4,2 MB");
-        assert_eq!(format_size(Lang::En, 4_404_019), "4.2 MB");
-        assert_eq!(format_size(Lang::En, 10), "1 KB");
-        assert_eq!(format_size(Lang::En, 2048), "2 KB");
+        assert_eq!(format_size("tr", 4_404_019), "4,2 MB");
+        assert_eq!(format_size("en", 4_404_019), "4.2 MB");
+        assert_eq!(format_size("en", 10), "1 KB");
+        assert_eq!(format_size("en", 2048), "2 KB");
     }
 
     #[test]
-    fn explicit_language_wins() {
-        assert_eq!(resolve("tr"), Lang::Tr);
-        assert_eq!(resolve("en"), Lang::En);
+    fn texts_come_from_json_tables() {
+        let (t, b) = file_received("tr", "Pixel", "a.pdf", 2048, "/İndirilenler");
+        assert_eq!(t, "Dosya alındı");
+        assert_eq!(
+            b,
+            "Pixel cihazından a.pdf (2 KB) /İndirilenler klasörüne kaydedildi."
+        );
+        let (t, b) = url_received("en", "Pixel", "https://x.y");
+        assert_eq!(t, "Link received");
+        assert!(b.contains("https://x.y") && b.contains("Pixel"));
+        assert_eq!(text_received("en", "P").0, "Text received");
     }
 }

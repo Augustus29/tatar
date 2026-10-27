@@ -28,6 +28,7 @@ use crate::protocol::pairing::{
     verification_key,
 };
 use crate::store::{Settings, SettingsPatch, SettingsStore, TrustedDevice, TrustedStore};
+use crate::troubleshoot::NetStats;
 
 /// Aynı anda en çok bu kadar eşleşmemiş bağlantı (notlar §2.2).
 const MAX_UNPAIRED_LINKS: usize = 42;
@@ -146,7 +147,9 @@ pub struct ManagerHandle {
     settings: Arc<SettingsStore>,
     identity: Arc<RwLock<Identity>>,
     tcp_port: u16,
+    udp_port: u16,
     local: Arc<LocalIdentity>,
+    stats: Arc<NetStats>,
 }
 
 impl ManagerHandle {
@@ -219,6 +222,23 @@ impl ManagerHandle {
     }
     pub fn tcp_port(&self) -> u16 {
         self.tcp_port
+    }
+    pub fn net_stats(&self) -> Arc<NetStats> {
+        self.stats.clone()
+    }
+    /// Kimliği yeniden duyurur (UDP yayını + mDNS). Sorun giderme ve "yerel ağ izni iste" kullanır.
+    pub fn reannounce(&self) {
+        self.cast(Cmd::IdentityChanged);
+    }
+    /// Yerel ağa gönderimin reddedilip reddedilmediğini yoklar (bkz. `discovery::probe_send_blocking`).
+    pub fn probe_local_network(&self) -> Option<bool> {
+        let data = self
+            .identity
+            .read()
+            .unwrap()
+            .to_udp_packet(self.tcp_port)
+            .serialize();
+        discovery::probe_send_blocking(&data, self.udp_port)
     }
     /// Bu cihazın sertifikası/anahtarı (yük soketlerinde TLS için eklentiler kullanır).
     pub fn local_identity(&self) -> Arc<LocalIdentity> {
@@ -324,18 +344,22 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
 
     let (tx, rx) = mpsc::unbounded_channel();
     let (link_tx, link_rx) = mpsc::unbounded_channel();
+    let stats = Arc::new(NetStats::default());
 
     let handle = ManagerHandle {
         tx: tx.clone(),
         settings: settings.clone(),
         identity: identity.clone(),
         tcp_port,
+        udp_port: cfg.udp_port,
         local: local.clone(),
+        stats: stats.clone(),
     };
 
     let discovered_cb: discovery::Callback = {
-        let tx = tx.clone();
+        let (tx, stats) = (tx.clone(), stats.clone());
         Arc::new(move |d| {
+            stats.mark_discovery(d.via);
             let _ = tx.send(Cmd::Discovered(d));
         })
     };
@@ -346,14 +370,20 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
             cfg.allow_loopback,
             discovered_cb.clone(),
         ) {
-            Ok(_) => log::info!("UDP {} dinleniyor", cfg.udp_port),
+            Ok(_) => {
+                stats.udp_bound.store(true, Ordering::Relaxed);
+                log::info!("UDP {} dinleniyor", cfg.udp_port)
+            }
             Err(e) => log::warn!("UDP {} dinlenemiyor: {:?}", cfg.udp_port, e.kind()),
         }
     }
     let mdns = if cfg.enable_mdns {
         let ident = identity.read().unwrap().clone();
         match Mdns::start(&ident, tcp_port, cfg.allow_loopback, discovered_cb) {
-            Ok(m) => Some(m),
+            Ok(m) => {
+                stats.mdns_up.store(true, Ordering::Relaxed);
+                Some(m)
+            }
             Err(e) => {
                 log::warn!("mDNS başlatılamadı: {e}");
                 None
@@ -366,8 +396,13 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
     // Gelen TCP bağlantıları.
     {
         let sem = Arc::new(Semaphore::new(MAX_PARALLEL_HANDSHAKES));
-        let (local, trusted, identity, tx) =
-            (local.clone(), trusted.clone(), identity.clone(), tx.clone());
+        let (local, trusted, identity, tx, stats) = (
+            local.clone(),
+            trusted.clone(),
+            identity.clone(),
+            tx.clone(),
+            stats.clone(),
+        );
         tokio::spawn(async move {
             loop {
                 let (stream, addr) = match listener.accept().await {
@@ -378,6 +413,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
                         continue;
                     }
                 };
+                stats.mark_tcp_in();
                 let Ok(permit) = sem.clone().try_acquire_owned() else {
                     log::warn!("çok fazla eşzamanlı el sıkışma, bağlantı atıldı");
                     continue;
@@ -935,13 +971,16 @@ impl Core {
                     && !self.registry.dispatch(&h, &packet)
                 {
                     // Yalnızca tür loglanır.
-                    log::debug!("bilinmeyen paket türü yok sayıldı: {}", packet.packet_type);
+                    log::debug!(
+                        "bilinmeyen paket türü yok sayıldı: {}",
+                        crate::diag::clean(&packet.packet_type)
+                    );
                 }
             }
             Disposition::DropUnpaired => {
                 log::warn!(
                     "eşleşmemiş cihazdan paket atıldı: {} ({})",
-                    packet.packet_type,
+                    crate::diag::clean(&packet.packet_type),
                     short(id)
                 );
                 // Karşı taraf bizi eşleşmiş sanıyor: durumunu düzeltmesi için bir kez "eşleşmedik" de.

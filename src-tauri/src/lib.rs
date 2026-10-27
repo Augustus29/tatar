@@ -13,6 +13,7 @@ mod shortcuts;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod store;
 mod transfer;
+mod troubleshoot;
 
 use std::sync::Arc;
 
@@ -23,6 +24,7 @@ use plugins::share::{
 use protocol::cert::KeyringStore;
 use store::{Settings, SettingsPatch, SettingsStore};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
 
@@ -31,7 +33,37 @@ struct TauriSink(AppHandle);
 
 impl EventSink for TauriSink {
     fn emit(&self, event: &str, payload: serde_json::Value) {
+        if event == "pair-request" {
+            self.announce_pair_request(&payload);
+        }
         let _ = self.0.emit(event, payload);
+    }
+}
+
+impl TauriSink {
+    /// Telefondan eşleştirme isteği gelince pencere gizli olsa da kullanıcı görsün: ana pencere
+    /// öne gelir ve doğrulama kodu bildirimle de gösterilir.
+    fn announce_pair_request(&self, payload: &serde_json::Value) {
+        let field = |k: &str| payload.get(k).and_then(|v| v.as_str()).unwrap_or_default();
+        let lang = self
+            .0
+            .try_state::<ManagerHandle>()
+            .map(|m| i18n::resolve_language(&m.get_settings().language))
+            .unwrap_or_else(|| i18n::resolve_language("system"));
+        let body = i18n::notify_text(
+            lang,
+            "pairBody",
+            &[
+                ("device", field("deviceName")),
+                ("code", field("verificationKey")),
+            ],
+        );
+        plugins::notifier::Notifier::notify(
+            &TauriNotifier(self.0.clone()),
+            &i18n::notify_text(lang, "pairTitle", &[]),
+            &body,
+        );
+        show_main(&self.0);
     }
 }
 
@@ -57,6 +89,8 @@ const KEYCHAIN_SERVICE: &str = "io.github.augustus29.tatar";
 const KEYCHAIN_USER: &str = "device-private-key";
 
 const MAIN_LABEL: &str = "main";
+/// Oturum açılışında başlatılırken verilen argüman (ana pencere gizli kalır).
+const AUTOSTART_ARG: &str = "--hidden";
 
 pub(crate) fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(MAIN_LABEL) {
@@ -156,12 +190,193 @@ fn get_settings(mgr: State<'_, ManagerHandle>) -> Settings {
     mgr.get_settings()
 }
 
-/// Yamayı uygular, birleştirilmiş ayarları döndürür ve `settings-changed` yayar.
+/// Yamayı uygular, değişikliklerin sistem tarafındaki etkisini (açılışta başlat, Dock, tepsi)
+/// uygular, birleştirilmiş ayarları döndürür ve `settings-changed` yayar.
+/// Cihaz adı değişince yönetici kimliği yeniden duyurur (`ManagerHandle::set_settings`).
 #[tauri::command]
 fn set_settings(app: AppHandle, mgr: State<'_, ManagerHandle>, patch: SettingsPatch) -> Settings {
-    let s = mgr.set_settings(patch);
+    let before = mgr.get_settings();
+    let mut s = mgr.set_settings(patch);
+    if let Some(actual) = apply_settings_effects(&app, Some(&before), &s) {
+        // Açılışta başlatma ayarlanamadıysa kayıtlı değeri gerçek duruma çek.
+        s = mgr.set_settings(SettingsPatch {
+            launch_at_login: Some(actual),
+            ..Default::default()
+        });
+    }
     let _ = app.emit("settings-changed", &s);
     s
+}
+
+/// Dock ve menü çubuğu simgesi görünürlük planı.
+#[derive(Debug, PartialEq, Eq)]
+struct UiPlan {
+    /// macOS'ta Dock simgesi (etkinleştirme ilkesi Regular/Accessory)
+    dock: bool,
+    tray: bool,
+}
+
+/// Ayarlardan görünürlük planı çıkarır. Uygulamaya ulaşmanın tek yolu kalmasın diye Dock
+/// gizliyken menü çubuğu simgesi zorla görünür; Windows'ta tepsi simgesi hep görünür
+/// (pencere kapatılınca uygulamaya ulaşmanın yolu o).
+fn ui_plan(s: &Settings, mac: bool) -> UiPlan {
+    if mac {
+        UiPlan {
+            dock: s.show_in_dock,
+            tray: s.show_in_menu_bar || !s.show_in_dock,
+        }
+    } else {
+        UiPlan {
+            dock: true,
+            tray: true,
+        }
+    }
+}
+
+/// Açılışta başlatmayı istenen duruma getirir. Başarısızsa gerçek durumu döndürür.
+fn sync_autostart(app: &AppHandle, want: bool) -> Option<bool> {
+    let manager = app.autolaunch();
+    match manager.is_enabled() {
+        Ok(cur) if cur == want => None,
+        Ok(_) => {
+            let r = if want {
+                manager.enable()
+            } else {
+                manager.disable()
+            };
+            match r {
+                Ok(()) => None,
+                Err(e) => {
+                    log::warn!("açılışta başlatma ayarlanamadı: {e}");
+                    Some(manager.is_enabled().unwrap_or(false))
+                }
+            }
+        }
+        Err(e) => {
+            log::warn!("açılışta başlatma durumu okunamadı: {e}");
+            None
+        }
+    }
+}
+
+fn apply_ui_plan(app: &AppHandle, s: &Settings) {
+    let plan = ui_plan(s, cfg!(target_os = "macos"));
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::ActivationPolicy;
+        let policy = if plan.dock {
+            ActivationPolicy::Regular
+        } else {
+            ActivationPolicy::Accessory
+        };
+        if let Err(e) = app.set_activation_policy(policy) {
+            log::warn!("Dock ayarı uygulanamadı: {e}");
+        }
+        // İlke değişince pencere arkada kalabilir; açıksa öne al.
+        if let Some(w) = app.get_webview_window(MAIN_LABEL)
+            && w.is_visible().unwrap_or(false)
+        {
+            let _ = w.set_focus();
+        }
+    }
+    if let Some(tray) = app.tray_by_id("main")
+        && let Err(e) = tray.set_visible(plan.tray)
+    {
+        log::warn!("menü çubuğu simgesi ayarlanamadı: {e}");
+    }
+}
+
+/// Ayar değişikliklerinin sistemdeki karşılığını uygular. `before = None` açılıştaki tam eşitleme.
+/// Açılışta başlatma ayarlanamadıysa gerçek değeri döndürür.
+fn apply_settings_effects(
+    app: &AppHandle,
+    before: Option<&Settings>,
+    now: &Settings,
+) -> Option<bool> {
+    let ui_changed = before.is_none_or(|b| {
+        b.show_in_dock != now.show_in_dock || b.show_in_menu_bar != now.show_in_menu_bar
+    });
+    if ui_changed {
+        apply_ui_plan(app, now);
+    }
+    if before.is_none_or(|b| b.launch_at_login != now.launch_at_login) {
+        return sync_autostart(app, now.launch_at_login);
+    }
+    None
+}
+
+// ---- Sorun giderme ve sistem ayarları (Aşama 7) ----
+
+/// 5 gerçek denetimi çalıştırır (sıra: wifi, localNetwork, firewall, discovery, phoneApp).
+/// Önce kimlik yeniden yayınlanır; telefonlar buna bağlanarak yanıt verdiğinden 1,5 sn beklenir.
+#[tauri::command]
+async fn run_troubleshoot(
+    mgr: State<'_, ManagerHandle>,
+) -> Result<Vec<troubleshoot::CheckResult>, String> {
+    use troubleshoot::{DeviceFacts, Firewall, Inputs, LocalNet};
+    let handle = mgr.inner().clone();
+    handle.reannounce();
+    let probe_handle = handle.clone();
+    let probe = tauri::async_runtime::spawn_blocking(move || probe_handle.probe_local_network())
+        .await
+        .ok()
+        .flatten();
+    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+
+    let wifi = tauri::async_runtime::spawn_blocking(platform::netinfo::wifi_facts)
+        .await
+        .map_err(|e| e.to_string())?;
+    // `netsh` çok kurallı makinelerde yavaş olabilir; sınırlı bekle.
+    let firewall = match tokio::time::timeout(
+        std::time::Duration::from_secs(8),
+        tauri::async_runtime::spawn_blocking(platform::netinfo::firewall_state),
+    )
+    .await
+    {
+        Ok(Ok(f)) => f,
+        _ => Firewall::Unknown,
+    };
+    let local_net = if cfg!(target_os = "macos") && probe == Some(false) {
+        LocalNet::Denied
+    } else {
+        platform::netinfo::local_network_default()
+    };
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    let views = handle.list_devices().await;
+    let tuples: Vec<_> = views
+        .iter()
+        .map(|d| (d.paired, d.reachable, d.last_seen))
+        .collect();
+    let inputs = Inputs {
+        wifi,
+        net: handle.net_stats().snapshot(),
+        tcp_listening: handle.tcp_port() != 0,
+        local_net,
+        firewall,
+        devices: DeviceFacts::from_devices(&tuples, now),
+    };
+    Ok(troubleshoot::assemble(&inputs, now))
+}
+
+/// Sistem ayarlarında ilgili sayfayı açar ('firewall' | 'localNetwork').
+#[tauri::command]
+fn open_system_settings(target: String) -> Result<(), String> {
+    platform::netinfo::open_system_settings(&target)
+}
+
+/// macOS Yerel Ağ iznini tetikler: yerel ağa bir yayın gönderir ve kimliği yeniden duyurur
+/// (karar verilmemişse sistem izin penceresini gösterir). Windows'ta izin gerekmez.
+#[tauri::command]
+async fn request_local_network(mgr: State<'_, ManagerHandle>) -> Result<bool, String> {
+    let handle = mgr.inner().clone();
+    handle.reannounce();
+    if cfg!(target_os = "macos") {
+        let _ = tauri::async_runtime::spawn_blocking(move || handle.probe_local_network()).await;
+    }
+    Ok(true)
 }
 
 #[tauri::command]
@@ -273,7 +488,7 @@ impl AppNotifier {
 
 impl ShareNotifier for AppNotifier {
     fn notify(&self, n: ShareNotice) {
-        let lang = i18n_share::resolve(&self.settings.get().language);
+        let lang = i18n::resolve_language(&self.settings.get().language);
         match n {
             ShareNotice::FileReceived {
                 device,
@@ -293,14 +508,19 @@ impl ShareNotifier for AppNotifier {
             }
             ShareNotice::Text { device, text } => {
                 self.set_clipboard(&text);
-                let (t, b) = i18n_share::text_received(lang, &device);
-                self.show(t, b);
+                // Pano her durumda güncellenir; bildirim "alınan öğeler" anahtarına bağlıdır.
+                if self.settings.get().notifications.file_received {
+                    let (t, b) = i18n_share::text_received(lang, &device);
+                    self.show(t, b);
+                }
             }
             ShareNotice::Url { device, url } => {
                 // Bağlantı kendiliğinden açılmaz; panoya konur ve bildirilir.
                 self.set_clipboard(&url);
-                let (t, b) = i18n_share::url_received(lang, &device, &url);
-                self.show(t, b);
+                if self.settings.get().notifications.file_received {
+                    let (t, b) = i18n_share::url_received(lang, &device, &url);
+                    self.show(t, b);
+                }
             }
         }
     }
@@ -372,6 +592,14 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 pub fn run() {
     diag::init();
     let app = tauri::Builder::default()
+        // İkinci başlatma yeni süreç açmaz; var olan ana pencereyi öne getirir. İlk kayıtlı eklenti olmalı.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            show_main(app);
+        }))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec![AUTOSTART_ARG]),
+        ))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -395,6 +623,9 @@ pub fn run() {
             get_identity,
             get_diagnostic_log,
             app_info,
+            run_troubleshoot,
+            open_system_settings,
+            request_local_network,
             plugins::clipboard::get_clipboard_history,
             plugins::clipboard::clear_clipboard_history,
             plugins::clipboard::send_clipboard,
@@ -412,6 +643,16 @@ pub fn run() {
             popover::setup(app.handle())?;
             platform::watch_reduce_transparency(app.handle());
             start_protocol(app.handle())?;
+            let settings = app.state::<ManagerHandle>().get_settings();
+            // Açılışta ayar → sistem eşitlemesi (Dock, tepsi, açılışta başlat).
+            apply_settings_effects(app.handle(), None, &settings);
+            // Oturum açılışında başlatılan uygulama pencereyi göstermeden menü çubuğunda açılır.
+            if settings.onboarded
+                && std::env::args().any(|a| a == AUTOSTART_ARG)
+                && let Some(w) = app.get_webview_window(MAIN_LABEL)
+            {
+                let _ = w.hide();
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -435,4 +676,36 @@ pub fn run() {
         #[cfg(not(target_os = "macos"))]
         let _ = (app, event);
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ui_plan_keeps_an_entry_point() {
+        let mut s = Settings {
+            show_in_dock: false,
+            show_in_menu_bar: false,
+            ..Default::default()
+        };
+        // Dock da yok, menü çubuğu da kapalı: yine de tepsi görünür kalmalı.
+        assert_eq!(
+            ui_plan(&s, true),
+            UiPlan {
+                dock: false,
+                tray: true
+            }
+        );
+        s.show_in_dock = true;
+        assert_eq!(
+            ui_plan(&s, true),
+            UiPlan {
+                dock: true,
+                tray: false
+            }
+        );
+        // Windows'ta tepsi hep görünür.
+        assert!(ui_plan(&s, false).tray);
+    }
 }

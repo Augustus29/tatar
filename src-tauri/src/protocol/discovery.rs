@@ -158,6 +158,48 @@ pub fn broadcast_blocking(datagram: &[u8], udp_port: u16) {
     }
 }
 
+/// Gönderim hatası "yerel ağ erişimi reddedildi" gibi mi? (macOS Yerel Ağ izni yokken
+/// yerel adrese `sendto` EHOSTUNREACH ya da EPERM verir.)
+pub fn is_local_denied(e: &std::io::Error) -> bool {
+    matches!(
+        e.kind(),
+        std::io::ErrorKind::HostUnreachable | std::io::ErrorKind::PermissionDenied
+    )
+}
+
+/// Yerel ağa gönderimin izinli olup olmadığını yoklar: her arayüzün yayın adresine kimlik yollar.
+/// `Some(true)` en az bir gönderim başarılı, `Some(false)` hepsi izin hatasıyla reddedildi,
+/// `None` yoklanacak arayüz yok ya da sonuç belirsiz. Engelleyen iş: `spawn_blocking` içinde çağır.
+pub fn probe_send_blocking(datagram: &[u8], udp_port: u16) -> Option<bool> {
+    let (mut ok, mut denied) = (false, false);
+    for (ip, bcast) in local_ipv4_interfaces() {
+        let Ok(sock) = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP)) else {
+            continue;
+        };
+        if sock.set_broadcast(true).is_err()
+            || sock
+                .bind(&SocketAddr::from(SocketAddrV4::new(ip, 0)).into())
+                .is_err()
+        {
+            continue;
+        }
+        let target = bcast.unwrap_or(Ipv4Addr::BROADCAST);
+        match sock.send_to(
+            datagram,
+            &SocketAddr::from(SocketAddrV4::new(target, udp_port)).into(),
+        ) {
+            Ok(_) => ok = true,
+            Err(e) if is_local_denied(&e) => denied = true,
+            Err(_) => {}
+        }
+    }
+    match (ok, denied) {
+        (true, _) => Some(true),
+        (false, true) => Some(false),
+        _ => None,
+    }
+}
+
 /// Tek bir adrese UDP kimliği gönderir (elle ekleme / bağlantı kurtarma).
 pub fn unicast_blocking(datagram: &[u8], target: SocketAddr) {
     let bind: SocketAddr = match target {
@@ -321,6 +363,14 @@ mod tests {
         assert!(parse_udp_identity(&dgram(PEER, 1716, 8), ip("127.0.0.1"), ME, true).is_some());
         assert!(parse_udp_identity(b"{bozuk", lan, ME, false).is_none());
         assert!(parse_udp_identity(&vec![b'a'; 9000], lan, ME, false).is_none());
+    }
+
+    #[test]
+    fn denied_errors_detected() {
+        use std::io::{Error, ErrorKind};
+        assert!(is_local_denied(&Error::from(ErrorKind::HostUnreachable)));
+        assert!(is_local_denied(&Error::from(ErrorKind::PermissionDenied)));
+        assert!(!is_local_denied(&Error::from(ErrorKind::TimedOut)));
     }
 
     #[test]

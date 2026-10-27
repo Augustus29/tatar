@@ -173,7 +173,10 @@
     "scShowHist": "Pano geçmişini göster",
     "version": "Sürüm {version}",
     "aboutText": "KDE Connect protokolüyle uyumlu, açık kaynak bir masaüstü istemcisi. Adını Osmanlı'nın menzilden menzile haber taşıyan posta kuryelerinden alır.",
-    "github": "github.com/Augustus29/tatar"
+    "github": "github.com/Augustus29/tatar",
+    "diagCopy": "Tanılama günlüğünü kopyala",
+    "diagCopied": "Tanılama günlüğü panoya kopyalandı.",
+    "diagFailed": "Tanılama günlüğü kopyalanamadı."
   },
   "states": {
     "lostLine": "Bağlantı koptu · yeniden bağlanılıyor…",
@@ -316,6 +319,10 @@
     "pingTitle": "Ping",
     "pingBody": "{device} cihazından ping geldi.",
     "now": "şimdi",
-    "minutesAgo": "{n} dk önce"
+    "minutesAgo": "{n} dk önce",
+    "textReceivedTitle": "Metin alındı",
+    "textReceivedBody": "{device} cihazından gelen metin panoya kopyalandı.",
+    "urlReceivedTitle": "Bağlantı alındı",
+    "urlReceivedBody": "{device}: {url} (panoya kopyalandı, açılmadı)"
   }
 }

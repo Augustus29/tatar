@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { useI18n } from '../i18n';
-import { formatShortcut, isMac, isWindows } from '../lib/platform';
+import { formatShortcut, inTauri, isMac, isWindows } from '../lib/platform';
 import { onDragDrop } from '../lib/tauri';
 import { actions, onNotice, selectNearbyDevices, selectPairedDevices, useStore } from '../lib/store';
 import { seenAgo } from '../lib/format';
@@ -131,6 +131,8 @@ export function MainWindow() {
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDrag(false);
+    // Tauri'de bırakma yerel pencere olayıyla gelir (yukarıdaki onDragDrop); burası yalnızca tarayıcı önizlemesi.
+    if (inTauri) return;
     const files = Array.from(e.dataTransfer?.files ?? []);
     if (!cur || !online || files.length === 0) return;
     void actions.sendFiles(
@@ -174,7 +176,13 @@ export function MainWindow() {
   const deviceKind = (d: Device) => t(d.type === 'phone' ? 'device.phone' : 'device.tablet');
 
   if (ready && (!settings.onboarded || onbReopen)) {
-    return <Onboarding startAt={onbReopen ? 'search' : 'steps'} onFinish={finishOnboarding} />;
+    return (
+      <>
+        <Onboarding startAt={onbReopen ? 'search' : 'steps'} onFinish={finishOnboarding} />
+        {/* Akış sırasında telefondan eşleştirme isteği gelirse de görünsün */}
+        <PairingSheet />
+      </>
+    );
   }
 
   return (

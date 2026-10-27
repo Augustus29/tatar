@@ -43,6 +43,8 @@ rand = "0.10"
 gethostname = "1.1"
 if-addrs = "0.15"
 time = "0.3"
+tauri-plugin-autostart = "2"
+tauri-plugin-single-instance = "2"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
