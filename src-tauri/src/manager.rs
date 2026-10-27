@@ -932,6 +932,13 @@ impl Core {
             }
         );
         if paired && let Some(h) = self.handle_for(&id) {
+            // Tanılama için: karşı tarafın kabul ettiği paket türleri (yalnızca tür adları).
+            let caps: Vec<String> = h
+                .peer_incoming
+                .iter()
+                .map(|t| crate::diag::clean(t))
+                .collect();
+            log::debug!("{} kabul ettiği türler: {}", short(&id), caps.join(", "));
             self.registry.connected(&h);
         }
         self.emit_devices();
@@ -1021,6 +1028,15 @@ impl Core {
     }
 
     fn send_to(&mut self, id: &str, packet: NetworkPacket) -> Result<(), String> {
+        let ty = crate::diag::clean(&packet.packet_type);
+        let r = self.try_send_to(id, packet);
+        if let Err(e) = &r {
+            log::warn!("{ty} {} cihazına gönderilemedi: {e}", short(id));
+        }
+        r
+    }
+
+    fn try_send_to(&mut self, id: &str, packet: NetworkPacket) -> Result<(), String> {
         let d = self.devs.get(id).ok_or("bilinmeyen cihaz")?;
         if d.pair != PairState::Paired {
             return Err("cihaz eşleşmemiş".into());

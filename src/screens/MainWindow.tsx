@@ -138,7 +138,9 @@ export function MainWindow() {
     setMenu(false);
     if (!cur || !online) return;
     clearTimeout(ringTimer.current);
-    void actions.ringDevice(cur.id);
+    void actions.ringDevice(cur.id).then((ok) => {
+      if (!ok) setRinging(false);
+    });
     if (ringing) {
       setRinging(false);
       return;

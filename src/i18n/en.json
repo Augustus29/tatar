@@ -94,6 +94,7 @@
     "pairRejected": "{device} declined the pairing request",
     "pairFailed": "Could not pair with {device}, please try again",
     "unpaired": "{device} was removed from your paired devices.",
+    "ringFailed": "Couldn’t ring {device}. In KDE Connect on the phone, check that the “Ring my phone” plugin is enabled and has its permissions for Tatar.",
     "clipboardCopied": "Copied to clipboard"
   },
   "popover": {

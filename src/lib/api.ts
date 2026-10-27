@@ -13,7 +13,7 @@
  *  accept_pair                                   { deviceId }                        void           (gelen isteği kabul)
  *  reject_pair                                   { deviceId }                        void           (gelen isteği reddet VEYA giden isteği iptal et)
  *  unpair                                        { deviceId }                        void
- *  ping_device                                   { deviceId }                        void           (kdeconnect.ping)
+ *  ping_device                                   { deviceId }                        void (hata = başarısız)           (kdeconnect.ping)
  *  ring_device                                   { deviceId }                        void           (kdeconnect.findmyphone.request; tekrar çağrı durdurur)
  *  send_clipboard                                { deviceId, text?: string }         void           (text yoksa şu anki sistem panosu)
  *  pick_files                                    –                                   string[]       (yerel dosya seçici; iptalde [])
@@ -98,11 +98,12 @@ export const api = {
   async unpair(deviceId: string): Promise<void> {
     await run('unpair', { deviceId }, () => mock.unpair(deviceId));
   },
-  async pingDevice(deviceId: string): Promise<void> {
-    await run('ping_device', { deviceId }, () => undefined);
+  /** Başarılıysa true (komut hata verirse `call()` undefined döner). */
+  async pingDevice(deviceId: string): Promise<boolean> {
+    return (await run('ping_device', { deviceId }, () => null)) !== undefined;
   },
-  async ringDevice(deviceId: string): Promise<void> {
-    await run('ring_device', { deviceId }, () => undefined);
+  async ringDevice(deviceId: string): Promise<boolean> {
+    return (await run('ring_device', { deviceId }, () => null)) !== undefined;
   },
   async sendClipboard(deviceId: string, text?: string): Promise<void> {
     await run('send_clipboard', { deviceId, text }, () => undefined);

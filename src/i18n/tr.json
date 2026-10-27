@@ -94,6 +94,7 @@
     "pairRejected": "{device} eşleştirme isteğini reddetti",
     "pairFailed": "{device} ile eşleştirilemedi, tekrar deneyin",
     "unpaired": "{device} eşleşmiş cihazlarınız arasından çıkarıldı.",
+    "ringFailed": "{device} çaldırılamadı. Telefondaki KDE Connect’te Tatar için “Telefonumu çaldır” eklentisinin açık ve izinli olduğunu kontrol edin.",
     "clipboardCopied": "Panoya kopyalandı"
   },
   "popover": {

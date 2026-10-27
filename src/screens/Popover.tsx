@@ -92,7 +92,9 @@ export function Popover() {
 
   const ping = () => {
     if (!device || !online) return;
-    void actions.ringDevice(device.id);
+    void actions.ringDevice(device.id).then((ok) => {
+      if (!ok) setRinging(false);
+    });
     const r = !ringing;
     setRinging(r);
     if (r) later(() => setRinging(false), 4000);

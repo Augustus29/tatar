@@ -168,8 +168,13 @@ export const actions = {
     await api.unpair(deviceId);
   },
 
-  async ringDevice(deviceId: string): Promise<void> {
-    await api.ringDevice(deviceId);
+  async ringDevice(deviceId: string): Promise<boolean> {
+    const ok = await api.ringDevice(deviceId);
+    if (!ok) {
+      const name = state.devices.find((d) => d.id === deviceId)?.name ?? '';
+      notify({ key: 'toast.ringFailed', params: { device: name } });
+    }
+    return ok;
   },
   async sendClipboard(deviceId: string, text?: string): Promise<void> {
     await api.sendClipboard(deviceId, text);
