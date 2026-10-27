@@ -20,6 +20,8 @@ export function Dropdown<T extends string>({ value, options, onChange, label }: 
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const id = useId();
+  const typed = useRef('');
+  const typedAt = useRef(0);
   const idx = Math.max(
     0,
     options.findIndex((o) => o.value === value),
@@ -45,8 +47,26 @@ export function Dropdown<T extends string>({ value, options, onChange, label }: 
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setFocusIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setFocusIdx(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setFocusIdx(options.length - 1);
     } else if (e.key === 'Tab') {
       close(false);
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const now = Date.now();
+      typed.current = now - typedAt.current > 700 ? e.key.toLowerCase() : typed.current + e.key.toLowerCase();
+      typedAt.current = now;
+      const start = typed.current.length === 1 ? focusIdx + 1 : focusIdx;
+      for (let k = 0; k < options.length; k++) {
+        const j = (start + k) % options.length;
+        if (options[j].label.toLowerCase().startsWith(typed.current)) {
+          setFocusIdx(j);
+          break;
+        }
+      }
     }
   };
 
@@ -60,6 +80,13 @@ export function Dropdown<T extends string>({ value, options, onChange, label }: 
         aria-expanded={open}
         aria-label={`${label}: ${current.label}`}
         aria-controls={open ? id : undefined}
+        onKeyDown={(e) => {
+          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault();
+            setFocusIdx(idx);
+            setOpen(true);
+          }
+        }}
         onClick={() => {
           setFocusIdx(idx);
           setOpen((o) => !o);

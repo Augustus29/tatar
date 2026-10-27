@@ -10,3 +10,5 @@ v1 kapsamı CLAUDE.md §1'de. Aşağıdakiler istenmeden başlanmaz.
 - Arama gelince müziği duraklatma
 - Birden fazla cihazla aynı anda çalışma iyileştirmeleri
 - Mobil arayüz uyarlaması
+- Windows 11 "snap layouts" (büyüt düğmesinin üzerine gelince açılan yerleşim paneli): özel büyüt düğmesinde çalışmıyor, çünkü WebView2 `WM_NCHITTEST` iletisini yutuyor. Düğme alanını yerel bir `HTCAPTION`/`HTMAXBUTTON` bölgesi olarak işaretleyen bir çözüm araştırılacak.
+- Tepsi menüsü dili, uygulama dili çalışırken değiştirildiğinde canlı güncellenmiyor (yeniden başlatınca düzeliyor); dil değişince menü yeniden kurulmalı.

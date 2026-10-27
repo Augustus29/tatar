@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type DragEvent, type KeyboardEvent as ReactKeyEvent } from 'react';
 import { useI18n } from '../i18n';
 import { formatShortcut, inTauri, isMac, isWindows } from '../lib/platform';
 import { onDragDrop } from '../lib/tauri';
@@ -100,7 +100,34 @@ export function MainWindow() {
     });
   }, []);
 
-  const closeMenu = () => setMenu(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (menu) menuRef.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus();
+  }, [menu]);
+  const onMenuKey = (e: ReactKeyEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeMenu();
+      return;
+    }
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role=menuitem]') ?? []);
+    const i = items.indexOf(document.activeElement as HTMLElement);
+    let n = -1;
+    if (e.key === 'ArrowDown') n = (i + 1) % items.length;
+    else if (e.key === 'ArrowUp') n = (i - 1 + items.length) % items.length;
+    else if (e.key === 'Home') n = 0;
+    else if (e.key === 'End') n = items.length - 1;
+    else if (e.key === 'Tab') setMenu(false);
+    if (n >= 0) {
+      e.preventDefault();
+      items[n]?.focus();
+    }
+  };
+  const closeMenu = () => {
+    setMenu(false);
+    moreRef.current?.focus();
+  };
   const go = (v: View) => {
     setView(v);
     setMenu(false);
@@ -290,6 +317,7 @@ export function MainWindow() {
                 <ClipboardIcon strokeWidth={1.7} />
               </button>
               <button
+                ref={moreRef}
                 type="button"
                 className="tbb"
                 aria-label={t('toolbar.moreActions')}
@@ -488,7 +516,7 @@ export function MainWindow() {
         {menu && showTools && (
           <>
             <button type="button" className="scrim" aria-label={t('toolbar.closeMenu')} onClick={closeMenu} />
-            <div role="menu" className="glass-strong menu" onKeyDown={(e) => e.key === 'Escape' && closeMenu()}>
+            <div ref={menuRef} role="menu" aria-label={t('toolbar.moreActions')} className="glass-strong menu" onKeyDown={onMenuKey}>
               <button type="button" role="menuitem" className="mi" onClick={sendClip}>
                 <span>{t('actions.sendClipboard')}</span>
                 <span className="sc">{sc.clip}</span>

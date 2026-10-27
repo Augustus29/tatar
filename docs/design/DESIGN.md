@@ -6,7 +6,7 @@ Kesin değerler `prototype/*.dc.html` dosyalarındadır. Bu belge onların özet
 
 | Token | Açık | Koyu | Kullanım |
 |---|---|---|---|
-| `--accent` | `#0A7E8C` | `#3FC1CC` | Vurgu (İznik turkuazı): seçili öğe, birincil düğme, anahtar açık |
+| `--accent` | `#067682` | `#3FC1CC` | Vurgu (İznik turkuazı): seçili öğe, birincil düğme, anahtar açık |
 | `--onAccent` | `#FFFFFF` | `#00282C` | Vurgu üstündeki metin |
 | `--accentSoft` | `rgba(10,126,140,.12)` | `rgba(63,193,204,.16)` | İkon zemini, sürükleme alanı |
 | `--selBg` | `rgba(10,126,140,.18)` | `rgba(63,193,204,.20)` | Kenar çubuğu seçili satır |
@@ -15,8 +15,8 @@ Kesin değerler `prototype/*.dc.html` dosyalarındadır. Bu belge onların özet
 | `--text` | `#1D1D1F` | `#F5F5F7` | Ana metin |
 | `--text2` | `#5E5E63` | `#A1A1A6` | İkincil metin (AA kontrastı geçer) |
 | `--sep` | `rgba(0,0,0,.09)` | `rgba(255,255,255,.09)` | Ayırıcı çizgi |
-| `--green` | `#1F8A3B` | `#4CD964` | Bağlı, pil normal, başarı |
-| `--red` | `#C9372C` | `#FF6961` | Hata, yıkıcı eylem, pil zayıf |
+| `--green` | `#187A32` | `#4CD964` | Bağlı, pil normal, başarı |
+| `--red` | `#C2332A` | `#FF6961` | Hata, yıkıcı eylem, pil zayıf |
 | `--solidGlass` | `#ECECF0` | `#2C2C30` | Saydamlığı azalt açıkken camın yerine |
 
 Marka: Derin turkuaz `#0B5F69` (ikon zemini), Kurye kırmızısı `#C8442F` (ikon kuşağı), Parşömen `#F4EBDD` (ikon silueti).
@@ -49,6 +49,8 @@ Ayar ikonları için sistem renkleri: turuncu `#E07A1F` (pano), mor `#5B5BD6` (s
 | Dokunma/tıklama hedefi | en az 28 px (araç çubuğu 36 px) |
 
 ## Hareket
+_Not (Aşama 9): Açık temadaki `--accent`, `--green`, `--red` değerleri, kart ve saydamlığı-azalt zeminlerinde WCAG AA (4,5:1) metin kontrastı için hafifçe koyulaştırıldı._
+
 - **Yay (spring) — basma ve büyüme:** `cubic-bezier(.34,1.56,.64,1)`, .4–.45 s. Basılınca `scale(.95)`.
 - **Menü düğmeden doğar:** `scale(.35)` → 1, opaklık 0 → 1, .42 s `cubic-bezier(.34,1.4,.64,1)`, transform-origin = tetikleyen düğme.
 - **Açılır (popup) menü:** hızlı ve sade, `scale(.96)` → 1, .18 s ease-out.

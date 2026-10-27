@@ -34,6 +34,15 @@ use crate::troubleshoot::NetStats;
 const MAX_UNPAIRED_LINKS: usize = 42;
 /// Aynı IP / deviceId için iki bağlantı denemesi arasındaki en kısa süre.
 const RATE_GAP: Duration = Duration::from_millis(500);
+/// Başarısız giden bağlantı denemeleri arasındaki bekleme: 2 sn'den başlar, her hatada ikiye katlanır.
+const BACKOFF_BASE: Duration = Duration::from_secs(2);
+const BACKOFF_MAX: Duration = Duration::from_secs(60);
+
+/// `fails` ardışık hatadan sonraki bekleme süresi (üstel, en çok 60 sn).
+fn backoff_delay(fails: u32) -> Duration {
+    let mult = 1u32 << fails.saturating_sub(1).min(10);
+    (BACKOFF_BASE * mult).min(BACKOFF_MAX)
+}
 const MAX_PARALLEL_HANDSHAKES: usize = 16;
 
 pub trait EventSink: Send + Sync + 'static {
@@ -111,7 +120,7 @@ fn now_ms() -> i64 {
 }
 
 fn short(id: &str) -> &str {
-    &id[..id.len().min(8)]
+    id.get(..8).unwrap_or(id)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -302,6 +311,8 @@ struct Core {
     connecting: HashSet<String>,
     next_generation: u64,
     rate: HashMap<String, Instant>,
+    /// Bağlantı anahtarı → (ardışık hata sayısı, bir sonraki denemeye kadar bekleme bitişi).
+    backoff: HashMap<String, (u32, Instant)>,
     mdns: Option<Mdns>,
     ifaces: BTreeSet<std::net::Ipv4Addr>,
 }
@@ -485,6 +496,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
         connecting: HashSet::new(),
         next_generation: 0,
         rate: HashMap::new(),
+        backoff: HashMap::new(),
         mdns,
         ifaces: BTreeSet::new(),
     };
@@ -598,9 +610,17 @@ impl Core {
                     self.connecting.remove(k);
                 }
                 match result {
-                    Ok(est) => self.on_established(est),
+                    Ok(est) => {
+                        if let Some(k) = &key {
+                            self.backoff.remove(k);
+                        }
+                        self.on_established(est)
+                    }
                     Err(e) => {
                         log::info!("el sıkışma başarısız ({}): {e}", addr.ip());
+                        if let Some(k) = &key {
+                            self.note_connect_failure(k);
+                        }
                         // Dışarı bağlanamadıysak karşı tarafın bize bağlanmasını iste.
                         if key.is_some() && target_known && e.starts_with("bağlanılamadı") {
                             self.unicast_identity(addr.ip());
@@ -1030,7 +1050,28 @@ impl Core {
         }
     }
 
+    fn note_connect_failure(&mut self, key: &str) {
+        let now = Instant::now();
+        if self.backoff.len() > 256 {
+            self.backoff.retain(|_, (_, until)| *until > now);
+        }
+        let fails = self
+            .backoff
+            .get(key)
+            .map_or(0, |(n, _)| *n)
+            .saturating_add(1);
+        self.backoff
+            .insert(key.to_string(), (fails, now + backoff_delay(fails)));
+    }
+
     fn spawn_connect(&mut self, key: String, addr: SocketAddr, target: Option<(String, i64)>) {
+        if self
+            .backoff
+            .get(&key)
+            .is_some_and(|(_, until)| *until > Instant::now())
+        {
+            return;
+        }
         if !self.connecting.insert(key.clone()) {
             return;
         }
@@ -1121,6 +1162,8 @@ impl Core {
         let ip = discovery::normalize_ip(ip);
         // Telefon bize bağlansın (UDP) ve biz de doğrudan bağlanmayı deneyelim.
         self.unicast_identity(ip);
+        // Kullanıcı elle istedi: bekleme süresini atla.
+        self.backoff.remove(&format!("ip:{ip}"));
         if self.allow(&format!("ip:{ip}")) {
             self.spawn_connect(format!("ip:{ip}"), SocketAddr::new(ip, MIN_TCP_PORT), None);
         }
@@ -1214,6 +1257,16 @@ fn current_ifaces() -> BTreeSet<std::net::Ipv4Addr> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backoff_doubles_and_caps() {
+        assert_eq!(backoff_delay(1), Duration::from_secs(2));
+        assert_eq!(backoff_delay(2), Duration::from_secs(4));
+        assert_eq!(backoff_delay(5), Duration::from_secs(32));
+        assert_eq!(backoff_delay(6), Duration::from_secs(60));
+        assert_eq!(backoff_delay(u32::MAX), Duration::from_secs(60));
+    }
+
     use crate::plugins::Plugin;
     use crate::protocol::cert::MemoryKeyStore;
     use std::sync::Mutex;

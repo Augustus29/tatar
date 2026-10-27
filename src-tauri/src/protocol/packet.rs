@@ -252,6 +252,26 @@ mod tests {
     }
 
     #[test]
+    fn hostile_input_never_panics() {
+        let lim = MAX_PACKET_LINE;
+        // Aşırı derin iç içelik (serde_json özyineleme sınırı) ve geçersiz UTF-8 hata döndürmeli.
+        let deep = "[".repeat(100_000);
+        assert!(NetworkPacket::parse(deep.as_bytes(), lim).is_err());
+        assert!(NetworkPacket::parse(&[0xff, 0xfe, b'{', b'}'], lim).is_err());
+        assert!(NetworkPacket::parse(b"\x00\x00\x00", lim).is_err());
+        // Tür/gövde yanlış tipte.
+        for raw in [
+            r#"{"id":1,"type":5,"body":{}}"#,
+            r#"{"id":1,"type":"a","body":[]}"#,
+            r#"{"id":1,"type":"a","body":{},"payloadSize":"x"}"#,
+            r#"null"#,
+            r#"[1,2]"#,
+        ] {
+            let _ = NetworkPacket::parse(raw.as_bytes(), lim);
+        }
+    }
+
+    #[test]
     fn malformed_rejected() {
         let lim = MAX_PACKET_LINE;
         assert_eq!(NetworkPacket::parse(b"", lim), Err(PacketError::Empty));
