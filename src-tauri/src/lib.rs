@@ -7,6 +7,7 @@ mod plugins;
 mod popover;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod protocol;
+mod shortcuts;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod store;
 
@@ -31,7 +32,7 @@ const KEYCHAIN_USER: &str = "device-private-key";
 
 const MAIN_LABEL: &str = "main";
 
-fn show_main(app: &AppHandle) {
+pub(crate) fn show_main(app: &AppHandle) {
     if let Some(window) = app.get_webview_window(MAIN_LABEL) {
         let _ = window.unminimize();
         let _ = window.show();
@@ -140,11 +141,18 @@ fn app_info(app: AppHandle) -> serde_json::Value {
 fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = app.path().app_data_dir()?;
     let keys = Arc::new(KeyringStore::new(KEYCHAIN_SERVICE, KEYCHAIN_USER));
-    // Eklentiler sonraki aşamalarda burada kaydedilir.
-    let registry = plugins::Registry::new();
+    // Eklentiler burada kaydedilir.
+    let mut registry = plugins::Registry::new();
+    let clipboard = plugins::clipboard::ClipboardPlugin::new(Arc::new(TauriSink(app.clone())));
+    registry.register(Arc::new(plugins::clipboard::ClipboardPluginHandle(
+        clipboard.clone(),
+    )));
     let cfg = ManagerConfig::production(data_dir, keys, registry);
     let handle =
         tauri::async_runtime::block_on(manager::start(cfg, Arc::new(TauriSink(app.clone()))))?;
+    clipboard.start(handle.settings_store());
+    shortcuts::register_all(app, &handle.get_settings().shortcuts);
+    app.manage(clipboard);
     app.manage(handle);
     Ok(())
 }
@@ -154,6 +162,7 @@ pub fn run() {
     diag::init();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             show_main_window,
             hide_popover,
@@ -170,7 +179,11 @@ pub fn run() {
             set_settings,
             get_identity,
             get_diagnostic_log,
-            app_info
+            app_info,
+            plugins::clipboard::get_clipboard_history,
+            plugins::clipboard::clear_clipboard_history,
+            plugins::clipboard::send_clipboard,
+            shortcuts::set_shortcut
         ])
         .setup(|app| {
             popover::setup(app.handle())?;

@@ -44,6 +44,7 @@
  *  transfers-changed                             Transfer[]              (tam liste; silme sonrası)
  *  clipboard-history-changed                     ClipItem[]
  *  settings-changed                              Settings
+ *  shortcut                                      { id: ShortcutId }      (yalnızca findDev ve sendFile; diğerlerini Rust kendi yapar)
  *  reduce-transparency-changed                   boolean                 (zaten theme.ts kullanıyor)
  *
  * Gizlilik: Rust `ClipItem.kind === 'concealed'` için `text` alanını BOŞ gönderir.

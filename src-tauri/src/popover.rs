@@ -149,3 +149,21 @@ pub fn hide(app: &AppHandle) {
         let _ = window.hide();
     }
 }
+
+/// Popover'ı tepsi simgesinin altında açar (kısayoldan). Simge konumu yoksa hiçbir şey yapmaz.
+pub fn show_from_tray(app: &AppHandle) {
+    let Some(window) = app.get_webview_window(POPOVER_LABEL) else {
+        return;
+    };
+    if window.is_visible().unwrap_or(false) {
+        let _ = window.hide();
+        return;
+    }
+    if let Some(tray) = app.tray_by_id("main")
+        && let Ok(Some(rect)) = tray.rect()
+    {
+        place_under_tray(&window, rect);
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}

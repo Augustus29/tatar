@@ -3,6 +3,8 @@
 //!
 //! Çekirdek, bir paketi eklentiye YALNIZCA eşleşmiş cihazdan geldiyse iletir.
 
+pub mod clipboard;
+
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
