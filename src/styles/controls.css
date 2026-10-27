@@ -1,0 +1,302 @@
+/* Kontroller — düğme, anahtar, segment, açılır menü, menü öğeleri */
+.btn {
+  transition:
+    transform 0.4s var(--spring),
+    background 0.2s,
+    filter 0.2s;
+}
+.btn:active {
+  transform: scale(0.95);
+}
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-base.lg {
+  height: 30px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.pri {
+  background: var(--accent);
+  color: var(--onAccent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.btn-glass {
+  color: var(--accent);
+}
+.btn-glass.neutral {
+  color: var(--text);
+}
+
+.hov {
+  background: transparent;
+  border: 0;
+  transition:
+    background 0.18s,
+    transform 0.4s var(--spring);
+}
+.hov:hover {
+  background: var(--hover);
+}
+.hov[data-sel='1'] {
+  background: var(--selBg);
+}
+.hov:active {
+  transform: scale(0.97);
+}
+
+.tbb {
+  background: transparent;
+  border: 0;
+  transition:
+    background 0.18s,
+    transform 0.4s var(--spring);
+}
+.tbb:hover,
+.tbb[aria-expanded='true'] {
+  background: var(--hover);
+}
+.tbb:active {
+  transform: scale(0.9);
+}
+
+.tile {
+  background: var(--card);
+  transition:
+    transform 0.4s var(--spring),
+    background 0.2s;
+}
+.tile:hover {
+  background: var(--cardHover);
+}
+.tile:active {
+  transform: scale(0.95);
+}
+
+.tlink {
+  border: 0;
+  background: transparent;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  transition:
+    transform 0.4s var(--spring),
+    background 0.2s;
+}
+.tlink:hover {
+  background: var(--accentSoft);
+}
+.tlink:active {
+  transform: scale(0.95);
+}
+
+/* Anahtar (switch) */
+.sw {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  border: 0;
+  padding: 0;
+  flex: none;
+  background: var(--off);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+  transition: background 0.25s;
+}
+.sw[aria-checked='true'] {
+  background: var(--accent);
+}
+.sw .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--knob);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transform: translateX(0);
+  transition:
+    width 0.25s,
+    margin-left 0.25s,
+    transform 0.45s var(--spring);
+}
+.sw[aria-checked='true'] .knob {
+  transform: translateX(16px);
+}
+.sw:active .knob {
+  width: 28px;
+}
+.sw[aria-checked='true']:active .knob {
+  margin-left: -6px;
+}
+
+/* Segment denetimi */
+.seg {
+  position: relative;
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--segBg);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.seg .thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 76px;
+  border-radius: 999px;
+  background: var(--segKnob);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transition: transform 0.5s var(--spring);
+}
+.seg button {
+  position: relative;
+  width: 76px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+}
+.seg button[aria-checked='true'] {
+  font-weight: 600;
+}
+
+/* Açılır menü (macOS tarzı; seçili öğe düğmenin üstüne hizalanır) */
+.pop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 132px;
+  height: 28px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--fieldBorder);
+  background: var(--field);
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+}
+.pop .chev {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--onAccent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.popmenu {
+  position: absolute;
+  z-index: 30;
+  left: -12px;
+  min-width: calc(100% + 24px);
+  padding: 5px;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  animation: menuIn 0.18s ease-out;
+}
+.mi-opt {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 24px;
+  padding: 0 10px 0 26px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  position: relative;
+}
+.mi-opt:hover,
+.mi-opt:focus-visible {
+  background: var(--accent);
+  color: var(--onAccent);
+  outline: none;
+}
+.mi-opt svg {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+}
+
+/* Menü öğeleri (araç çubuğu menüsü, popover alt satırları) */
+.mi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.mi .sc {
+  color: var(--text2);
+}
+.mi:hover,
+.mi:focus-visible {
+  background: var(--accent);
+  color: var(--onAccent);
+  text-decoration: none;
+  outline: none;
+}
+.mi:hover .sc,
+.mi:focus-visible .sc {
+  color: var(--onAccent);
+}
+.mi.danger {
+  color: var(--red);
+}
+.mi.danger:hover,
+.mi.danger:focus-visible {
+  background: var(--red);
+  color: #fff;
+}
+
+/* Metin alanı */
+.field {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--fieldBorder);
+  background: var(--field);
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  user-select: text;
+  -webkit-user-select: text;
+}

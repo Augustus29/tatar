@@ -1,0 +1,75 @@
+/* Tasarım token'ları — kaynak: docs/design/DESIGN.md ve prototype/Main.dc.html */
+:root {
+  --content: #ffffff;
+  --winBg: #ffffff;
+  --card: #f5f5f7;
+  --cardHover: #ececef;
+  --hover: rgba(0, 0, 0, 0.06);
+  --text: #1d1d1f;
+  --text2: #5e5e63;
+  --sep: rgba(0, 0, 0, 0.09);
+  --sep2: rgba(0, 0, 0, 0.2);
+  --accent: #0a7e8c;
+  --accentSoft: rgba(10, 126, 140, 0.12);
+  --onAccent: #ffffff;
+  --selBg: rgba(10, 126, 140, 0.18);
+  --green: #1f8a3b;
+  --red: #c9372c;
+  --knob: #ffffff;
+  --off: rgba(0, 0, 0, 0.16);
+  --devFrame: #2b2b2e;
+  --devScreen: #dceff1;
+  --solidGlass: #ececf0;
+  --field: rgba(255, 255, 255, 0.7);
+  --fieldBorder: rgba(0, 0, 0, 0.12);
+  --subtle: rgba(255, 255, 255, 0.45);
+  --subtleBorder: rgba(255, 255, 255, 0.5);
+  --track: rgba(0, 0, 0, 0.1);
+  --segBg: rgba(0, 0, 0, 0.07);
+  --segKnob: #ffffff;
+  --muted: #8a8a8f;
+  --brandTeal: #0b5f69;
+  --brandRed: #c8442f;
+  --brandParchment: #f4ebdd;
+
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --springSoft: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --easeOut: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', 'Inter', system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+:root.dark {
+  --content: #1e1e20;
+  --winBg: #1e1e20;
+  --card: #2a2a2d;
+  --cardHover: #343438;
+  --hover: rgba(255, 255, 255, 0.08);
+  --text: #f5f5f7;
+  --text2: #a1a1a6;
+  --sep: rgba(255, 255, 255, 0.09);
+  --sep2: rgba(255, 255, 255, 0.2);
+  --accent: #3fc1cc;
+  --accentSoft: rgba(63, 193, 204, 0.16);
+  --onAccent: #00282c;
+  --selBg: rgba(63, 193, 204, 0.2);
+  --green: #4cd964;
+  --red: #ff6961;
+  --knob: #f5f5f7;
+  --off: rgba(255, 255, 255, 0.18);
+  --devFrame: #0e0e10;
+  --devScreen: #1f4a50;
+  --solidGlass: #2c2c30;
+  --field: rgba(255, 255, 255, 0.08);
+  --fieldBorder: rgba(255, 255, 255, 0.14);
+  --subtle: rgba(255, 255, 255, 0.07);
+  --subtleBorder: rgba(255, 255, 255, 0.1);
+  --track: rgba(255, 255, 255, 0.14);
+  --segBg: rgba(255, 255, 255, 0.1);
+  --segKnob: #5a5a60;
+  --muted: #8e8e93;
+
+  color-scheme: dark;
+}

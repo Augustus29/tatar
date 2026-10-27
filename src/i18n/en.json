@@ -1,0 +1,117 @@
+{
+  "app": { "name": "Tatar" },
+  "common": {
+    "close": "Close",
+    "minimize": "Minimize",
+    "fullscreen": "Full screen"
+  },
+  "sidebar": {
+    "myDevices": "My Devices",
+    "nearby": "Nearby",
+    "pair": "Pair",
+    "thisComputer": "This computer",
+    "settings": "Settings"
+  },
+  "device": {
+    "connectedBattery": "Connected · {battery}%",
+    "notConnected": "Not connected",
+    "connectedLine": "Connected · {net} · {ip}",
+    "lastSeen": "Not connected · Last seen {seen}",
+    "autoReconnect": "The device connects automatically when it joins the same Wi‑Fi network.",
+    "lastKnown": "last known",
+    "charging": "Charging",
+    "ringing": "Device is ringing…",
+    "wifi": "Wi‑Fi",
+    "hoursAgo": "{n} hours ago",
+    "tablet": "Tablet",
+    "phone": "Phone"
+  },
+  "toolbar": {
+    "findDevice": "Find device",
+    "sendClipboard": "Send clipboard",
+    "moreActions": "More actions",
+    "closeMenu": "Close menu"
+  },
+  "actions": {
+    "heading": "Actions",
+    "findDevice": "Find device",
+    "findDeviceSub": "Makes the device ring loudly",
+    "stopRinging": "Stop ringing",
+    "sendClipboard": "Send clipboard",
+    "sendFile": "Send file…"
+  },
+  "sync": {
+    "heading": "Sync",
+    "clipboard": "Clipboard sync",
+    "clipboardSub": "Text you copy is shared automatically between both devices.",
+    "muteOnCall": "Mute on incoming call",
+    "muteOnCallSub": "When your phone rings, this computer’s sound is muted and restored when the call ends."
+  },
+  "transfers": {
+    "heading": "Transfers",
+    "clearDone": "Clear completed",
+    "dropHint": "Drag files here or",
+    "dropRelease": "Release to send",
+    "chooseFile": "Choose file",
+    "none": "No transfers yet.",
+    "sent": "Sent",
+    "received": "Received",
+    "now": "Now",
+    "yesterday": "Yesterday",
+    "showInFolder": "Show in Finder",
+    "showInFolderWin": "Show in folder"
+  },
+  "menu": {
+    "findDevice": "Find device",
+    "deviceSettings": "Device settings…",
+    "unpair": "Unpair…"
+  },
+  "toast": {
+    "clipboardSent": "Clipboard sent to {device}",
+    "fileSent": "{name} sent",
+    "unpairConfirm": "A confirmation dialog opens: unpair this device?"
+  },
+  "popover": {
+    "connectedWifi": "Connected · Wi‑Fi",
+    "batteryAria": "Battery {n} percent, charging",
+    "ping": "Ring",
+    "pingStop": "Stop",
+    "clipboard": "Clipboard",
+    "clipboardSent": "Sent",
+    "file": "File",
+    "history": "Clipboard history",
+    "clear": "Clear",
+    "empty": "History is empty",
+    "copy": "Copy",
+    "sendToPhone": "Send to phone",
+    "dropHint": "Drag a file here to send it",
+    "dropRelease": "Release to send",
+    "open": "Open Tatar",
+    "settings": "Settings…",
+    "quit": "Quit Tatar",
+    "now": "now",
+    "minutes": "{n} min",
+    "hours": "{n} h",
+    "concealed": "•••••• From password manager · not sent"
+  },
+  "settings": {
+    "title": "General",
+    "back": "Back",
+    "language": "Language",
+    "langSystem": "System language",
+    "langTr": "Türkçe",
+    "langEn": "English",
+    "clipboardMode": "Clipboard sync",
+    "modeAuto": "Automatic",
+    "modeManual": "Manual",
+    "modeOff": "Off",
+    "onCall": "On incoming call",
+    "callMute": "Mute sound",
+    "callLower": "Lower sound",
+    "callNothing": "Do nothing",
+    "launchAtLogin": "Launch at login",
+    "showInMenuBar": "Show in menu bar",
+    "showInDock": "Show in Dock",
+    "stageNote": "The rest of the settings will arrive in later stages."
+  }
+}

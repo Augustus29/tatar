@@ -1,0 +1,117 @@
+{
+  "app": { "name": "Tatar" },
+  "common": {
+    "close": "Kapat",
+    "minimize": "Simge durumuna küçült",
+    "fullscreen": "Tam ekran"
+  },
+  "sidebar": {
+    "myDevices": "Cihazlarım",
+    "nearby": "Yakındakiler",
+    "pair": "Eşleştir",
+    "thisComputer": "Bu bilgisayar",
+    "settings": "Ayarlar"
+  },
+  "device": {
+    "connectedBattery": "Bağlı · %{battery}",
+    "notConnected": "Bağlı değil",
+    "connectedLine": "Bağlı · {net} · {ip}",
+    "lastSeen": "Bağlı değil · Son görülme {seen}",
+    "autoReconnect": "Cihaz aynı Wi‑Fi ağına katıldığında otomatik olarak bağlanır.",
+    "lastKnown": "son bilinen",
+    "charging": "Şarj oluyor",
+    "ringing": "Cihaz çalıyor…",
+    "wifi": "Wi‑Fi",
+    "hoursAgo": "{n} saat önce",
+    "tablet": "Tablet",
+    "phone": "Telefon"
+  },
+  "toolbar": {
+    "findDevice": "Aygıtı bul",
+    "sendClipboard": "Pano gönder",
+    "moreActions": "Diğer eylemler",
+    "closeMenu": "Menüyü kapat"
+  },
+  "actions": {
+    "heading": "Eylemler",
+    "findDevice": "Aygıtı bul",
+    "findDeviceSub": "Cihazı yüksek sesle çaldırır",
+    "stopRinging": "Çalmayı durdur",
+    "sendClipboard": "Panoyu gönder",
+    "sendFile": "Dosya gönder…"
+  },
+  "sync": {
+    "heading": "Senkronizasyon",
+    "clipboard": "Pano senkronizasyonu",
+    "clipboardSub": "Kopyaladığınız metin iki cihaz arasında otomatik paylaşılır.",
+    "muteOnCall": "Arama gelince sesi kapat",
+    "muteOnCallSub": "Telefon çaldığında bilgisayarın sesi kısılır, arama bitince geri açılır."
+  },
+  "transfers": {
+    "heading": "Aktarımlar",
+    "clearDone": "Tamamlananları temizle",
+    "dropHint": "Dosyaları buraya sürükleyin ya da",
+    "dropRelease": "Göndermek için bırakın",
+    "chooseFile": "Dosya seç",
+    "none": "Henüz aktarım yok.",
+    "sent": "Gönderildi",
+    "received": "Alındı",
+    "now": "Şimdi",
+    "yesterday": "Dün",
+    "showInFolder": "Finder'da göster",
+    "showInFolderWin": "Klasörde göster"
+  },
+  "menu": {
+    "findDevice": "Aygıtı bul",
+    "deviceSettings": "Cihaz ayarları…",
+    "unpair": "Eşleşmeyi kaldır…"
+  },
+  "toast": {
+    "clipboardSent": "Pano {device} cihazına gönderildi",
+    "fileSent": "{name} gönderildi",
+    "unpairConfirm": "Onay penceresi açılır: eşleşme kaldırılsın mı?"
+  },
+  "popover": {
+    "connectedWifi": "Bağlı · Wi‑Fi",
+    "batteryAria": "Pil yüzde {n}, şarj oluyor",
+    "ping": "Çaldır",
+    "pingStop": "Durdur",
+    "clipboard": "Pano",
+    "clipboardSent": "Gönderildi",
+    "file": "Dosya",
+    "history": "Pano geçmişi",
+    "clear": "Temizle",
+    "empty": "Geçmiş boş",
+    "copy": "Kopyala",
+    "sendToPhone": "Telefona gönder",
+    "dropHint": "Dosyayı göndermek için buraya sürükleyin",
+    "dropRelease": "Göndermek için bırakın",
+    "open": "Tatar'ı aç",
+    "settings": "Ayarlar…",
+    "quit": "Tatar'dan çık",
+    "now": "şimdi",
+    "minutes": "{n} dk",
+    "hours": "{n} sa",
+    "concealed": "•••••• Şifre yöneticisinden · gönderilmedi"
+  },
+  "settings": {
+    "title": "Genel",
+    "back": "Geri",
+    "language": "Dil",
+    "langSystem": "Sistem dili",
+    "langTr": "Türkçe",
+    "langEn": "English",
+    "clipboardMode": "Pano senkronizasyonu",
+    "modeAuto": "Otomatik",
+    "modeManual": "Elle",
+    "modeOff": "Kapalı",
+    "onCall": "Arama gelince",
+    "callMute": "Sesi kapat",
+    "callLower": "Sesi azalt",
+    "callNothing": "Hiçbir şey yapma",
+    "launchAtLogin": "Oturum açıldığında başlat",
+    "showInMenuBar": "Menü çubuğunda göster",
+    "showInDock": "Dock’ta göster",
+    "stageNote": "Ayarların geri kalanı sonraki aşamalarda eklenecek."
+  }
+}
