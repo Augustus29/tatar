@@ -141,8 +141,9 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
                 self.notifier
                     .notify(&notify_text(lang, t, &[]), &notify_text(lang, b, &[]));
             }
-            // Arama sona erdi (iptal), cevaplandı (artık çalmıyor) ya da cevapsız kaldı.
-            (Some("ringing" | "talking"), true) | (Some("talking" | "missedCall"), false) => {
+            // Arama sona erdi (iptal) ya da cevapsız kaldı. Cevaplanınca (talking) görüşme
+            // sürdüğü için ses kapalı kalır; görüşme bitince talking + isCancel gelir.
+            (Some("ringing" | "talking"), true) | (Some("missedCall"), false) => {
                 self.muter.ended(&device.id);
             }
             _ => {}
@@ -295,9 +296,11 @@ mod tests {
         assert!(a.current().muted);
         p.device_disconnected("ph");
         assert_eq!(a.current(), st(false, 0.9));
-        // Cevaplanınca (talking) geri yüklenir.
+        // Cevaplanınca (talking) görüşme boyunca kapalı kalır, bitince geri yüklenir.
         p.handle(&dev, &pk(json!({"event": "ringing"})));
         p.handle(&dev, &pk(json!({"event": "talking"})));
+        assert!(a.current().muted);
+        p.handle(&dev, &pk(json!({"event": "talking", "isCancel": true})));
         assert_eq!(a.current(), st(false, 0.9));
     }
 }
