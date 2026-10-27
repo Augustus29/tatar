@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tatar · Ana pencere (Windows)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.tt{--content:#FFFFFF;--winBg:#FFFFFF;--card:#F5F5F7;--cardHover:#ECECEF;--hover:rgba(0,0,0,0.06);--text:#1D1D1F;--text2:#5E5E63;--sep:rgba(0,0,0,0.09);--sep2:rgba(0,0,0,0.2);--accent:#0A7E8C;--accentSoft:rgba(10,126,140,0.12);--onAccent:#FFFFFF;--selBg:rgba(10,126,140,0.18);--green:#1F8A3B;--red:#C9372C;--winBorder:rgba(255,255,255,0.5);--sky:#E8DFD3;--sun:#F2CDA6;--h1:#CDBCAA;--h2:#AC9786;--h3:#7F6B5E;--knob:#FFFFFF;--off:rgba(0,0,0,0.16);--devFrame:#2B2B2E;--devScreen:#DCEFF1;--solidGlass:#ECECF0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--text)}
+.tt.dark{--content:#1E1E20;--winBg:#1E1E20;--card:#2A2A2D;--cardHover:#343438;--hover:rgba(255,255,255,0.08);--text:#F5F5F7;--text2:#A1A1A6;--sep:rgba(255,255,255,0.09);--sep2:rgba(255,255,255,0.2);--accent:#3FC1CC;--accentSoft:rgba(63,193,204,0.16);--onAccent:#00282C;--selBg:rgba(63,193,204,0.2);--green:#4CD964;--red:#FF6961;--winBorder:rgba(255,255,255,0.12);--sky:#1B2030;--sun:#3A4157;--h1:#2C3142;--h2:#232737;--h3:#181B26;--knob:#F5F5F7;--off:rgba(255,255,255,0.18);--devFrame:#0E0E10;--devScreen:#1F4A50;--solidGlass:#2C2C30}
+.tt button{font:inherit;color:inherit;cursor:default}
+.tt a{color:var(--accent);text-decoration:none}
+.tt a:hover{text-decoration:underline}
+
+/* Liquid Glass material */
+.glass,.glass-strong{background:rgba(255,255,255,0.32);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);-webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),inset 0 0 12px rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.10);position:relative}
+.glass-strong{background:rgba(255,255,255,0.55)}
+.glass::before,.glass-strong::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,0.22) 100%);mix-blend-mode:soft-light}
+.glass>*,.glass-strong>*{position:relative}
+.dark .glass,.dark .glass-strong{background:rgba(40,40,46,0.38);border-color:rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 1px rgba(255,255,255,0.10),inset 0 0 12px rgba(255,255,255,0.06),0 10px 30px rgba(0,0,0,0.40),0 1px 3px rgba(0,0,0,0.30)}
+.dark .glass-strong{background:rgba(40,40,46,0.6)}
+.glass.sbar{background:rgba(236,236,241,0.72);box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),inset 0 -1px 1px rgba(255,255,255,0.3),0 6px 22px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.08)}
+.dark .glass.sbar{background:rgba(48,48,54,0.72);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 6px 22px rgba(0,0,0,0.45),0 1px 3px rgba(0,0,0,0.3)}
+.glass.sm{box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),0 2px 8px rgba(0,0,0,0.10),0 1px 2px rgba(0,0,0,0.08)}
+.dark .glass.sm{box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 1px rgba(255,255,255,0.10),0 2px 8px rgba(0,0,0,0.35),0 1px 2px rgba(0,0,0,0.30)}
+
+/* Reduce transparency (solid) */
+.tt.solid .glass,.tt.solid .glass-strong,.tt.solid .glass.sbar,.tt.solid .glass.sm,.tt.dark.solid .glass,.tt.dark.solid .glass-strong,.tt.dark.solid .glass.sbar,.tt.dark.solid .glass.sm{background:var(--solidGlass)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:1px solid var(--sep)!important;box-shadow:0 1px 3px rgba(0,0,0,0.12)!important}
+.tt.solid .glass::before,.tt.solid .glass-strong::before{display:none!important}
+
+/* Windows caption buttons */
+.cap{width:46px;height:32px;border:0;padding:0;margin:0;background:transparent;color:var(--text);display:flex;align-items:center;justify-content:center;transition:background .12s}
+.cap:hover{background:rgba(0,0,0,0.06)}
+.tt.dark .cap:hover{background:rgba(255,255,255,0.08)}
+.tt .cap.close:hover{background:#C42B1C;color:#FFFFFF}
+
+/* Controls */
+.btn{transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.btn:active{transform:scale(.95)}
+.pri{background:var(--accent);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),0 1px 2px rgba(0,0,0,0.15)}
+.hov{background:transparent;transition:background .18s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.hov:hover{background:var(--hover)}
+.hov[data-sel="0"]:hover{background:var(--hover)!important}
+.hov:active{transform:scale(.97)}
+.tbb{background:transparent;transition:background .18s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.tbb:hover{background:var(--hover)!important}
+.tbb:active{transform:scale(.9)}
+.tile{background:var(--card);transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.tile:hover{background:var(--cardHover)}
+.tile:active{transform:scale(.95)}
+.sw{box-shadow:inset 0 1px 2px rgba(0,0,0,0.12)}
+.sw .knob{transition:width .25s,margin-left .25s,transform .45s cubic-bezier(.34,1.56,.64,1)}
+.sw:active .knob{width:28px}
+.sw[aria-checked="true"]:active .knob{margin-left:-6px}
+.tt .mi{background:transparent;color:var(--text);transition:background .15s}
+.tt .mi .sc{color:var(--text2)}
+.tt .mi:hover{background:var(--accent);color:var(--onAccent);text-decoration:none}
+.tt .mi:hover .sc{color:var(--onAccent)}
+.tt .mi.danger{color:var(--red)}
+.tt .mi.danger:hover{background:var(--red);color:#fff}
+
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(.55);opacity:.6}100%{transform:translate(-50%,-50%) scale(2.1);opacity:0}}
+@keyframes toastIn{0%{transform:translate(-50%,22px) scale(.9);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}
+@keyframes menuMorph{0%{transform:scale(.35);opacity:0;border-radius:18px}100%{transform:scale(1);opacity:1;border-radius:16px}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}40%{transform:rotate(6deg)}60%{transform:rotate(-4deg)}80%{transform:rotate(3deg)}}
+@keyframes rowIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes heroIn{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="tt {{themeClass}}" style="position: relative; width: 100%; min-height: 780px; box-sizing: border-box; padding: 48px 24px; display: flex; justify-content: center; align-items: flex-start; overflow: hidden">
+<svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect x="0" y="0" width="1440" height="900" style="fill: var(--sky)"></rect>
+<circle cx="1080" cy="300" r="120" style="fill: var(--sun)"></circle>
+<path d="M0 560 Q360 470 720 520 T1440 500 V900 H0 Z" style="fill: var(--h1)"></path>
+<path d="M420 508 a80 80 0 0 1 160 0 Z" style="fill: var(--h1)"></path>
+<path d="M378 514 a40 40 0 0 1 80 0 Z" style="fill: var(--h1)"></path>
+<path d="M542 514 a40 40 0 0 1 80 0 Z" style="fill: var(--h1)"></path>
+<rect x="356" y="384" width="10" height="132" style="fill: var(--h1)"></rect>
+<path d="M354 386 L361 340 L368 386 Z" style="fill: var(--h1)"></path>
+<rect x="634" y="384" width="10" height="132" style="fill: var(--h1)"></rect>
+<path d="M632 386 L639 340 L646 386 Z" style="fill: var(--h1)"></path>
+<path d="M0 650 Q300 580 640 630 T1440 600 V900 H0 Z" style="fill: var(--h2)"></path>
+<path d="M0 760 Q420 690 860 740 T1440 720 V900 H0 Z" style="fill: var(--h3)"></path>
+</svg>
+
+<div style="position: relative; width: 100%; max-width: 1080px; min-height: 680px; border-radius: 26px; overflow: hidden; display: flex; flex-wrap: wrap; border: 1px solid var(--winBorder); box-shadow: 0 40px 100px rgba(0,0,0,0.30), 0 10px 30px rgba(0,0,0,0.12)">
+<div aria-hidden="true" style="position: absolute; inset: 0; border-radius: 26px; background: var(--winBg)"></div>
+
+<aside class="glass sbar" style="flex: 1 1 248px; max-width: calc(100% - 8px); box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; margin: 8px 14px 8px 8px; padding: {{sbarPad}}; border-radius: 18px; z-index: 1">
+<sc-if value="{{isMac}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; gap: 8px; padding: 4px 8px 14px">
+<button aria-label="Kapat" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FF5F57"></button>
+<button aria-label="Simge durumuna küçült" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FEBC2E"></button>
+<button aria-label="Tam ekran" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #28C840"></button>
+</div>
+</sc-if>
+<div style="font-size: 11px; font-weight: 600; color: var(--text2); padding: 6px 10px 4px">Cihazlarım</div>
+<sc-for list="{{devices}}" as="d" hint-placeholder-count="2">
+<button onClick="{{d.pick}}" class="hov" data-sel="{{d.selA}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 10px; background: {{d.rowBg}}; text-align: left">
+<span style="width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex: none; background: {{d.iconBg}}; color: {{d.iconFg}}">
+<sc-if value="{{d.isTab}}" hint-placeholder-val="{{true}}">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M18 12h.01"></path></svg>
+</sc-if>
+<sc-if value="{{d.isPhone}}" hint-placeholder-val="{{false}}">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M11 18.5h2"></path></svg>
+</sc-if>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{d.name}}</span>
+<span style="font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 5px"><span style="width: 6px; height: 6px; border-radius: 3px; background: {{d.dot}}"></span>{{d.status}}</span>
+</span>
+</button>
+</sc-for>
+
+<div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--text2); padding: 16px 10px 4px">
+<span>Yakındakiler</span>
+<svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" style="stroke-width: 2.4; stroke-linecap: round; animation: spin 1.1s linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 7px 10px">
+<span style="width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex: none; background: var(--hover); color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M11 18.5h2"></path></svg>
+</span>
+<span style="flex: 1; font-size: 13px; font-weight: 500">Pixel 8</span>
+<a href="Pairing.dc.html" class="btn pri" style="display: inline-flex; align-items: center; height: 28px; box-sizing: border-box; font-size: 12px; font-weight: 600; padding: 0 14px; border-radius: 999px; color: var(--onAccent); text-decoration: none">Eşleştir</a>
+</div>
+
+<div style="flex: 1; min-height: 24px"></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 10px 2px; border-top: 1px solid var(--sep)">
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+<span style="font-size: 11px; color: var(--text2)">Bu bilgisayar</span>
+<span style="font-size: 12px; font-weight: 600">MacBook Pro</span>
+</span>
+<a href="Settings.dc.html" aria-label="Ayarlar" class="hov" style="width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round"><path d="M4 7h9M17 7h3M4 17h4M12 17h8"></path><circle cx="15" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+</a>
+</div>
+</aside>
+
+<main style="flex: 999 1 560px; min-width: 0; min-height: 400px; display: flex; flex-direction: column; background: transparent; position: relative; overflow: hidden">
+<div style="position: absolute; top: 0; left: 0; right: 0; height: 56px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, var(--content) 30%, transparent)"></div>
+<div style="position: absolute; top: 0; left: 0; right: 0; height: 56px; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 0 {{toolbarRight}} 0 24px; box-sizing: border-box; pointer-events: none">
+<div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+<span style="font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{cur.name}}</span>
+<span style="font-size: 11px; color: var(--text2)">{{cur.subtitle}}</span>
+</div>
+<div class="glass" style="display: flex; align-items: center; height: 36px; box-sizing: border-box; padding: 0 1px; border-radius: 18px; flex: none; pointer-events: auto">
+<button onClick="{{ping}}" aria-label="Aygıtı bul" class="tbb" style="width: 36px; height: 36px; border: 0; border-radius: 18px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round"><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"></path></svg>
+</button>
+<button onClick="{{sendClip}}" aria-label="Pano gönder" class="tbb" style="width: 36px; height: 36px; border: 0; border-radius: 18px; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"></rect><rect x="9" y="2.5" width="6" height="3.5" rx="1"></rect><path d="M9 11h6M9 15h4"></path></svg>
+</button>
+<button onClick="{{toggleMenu}}" aria-label="Diğer eylemler" aria-expanded="{{menuOpen}}" class="tbb" style="width: 36px; height: 36px; border: 0; border-radius: 18px; padding: 0; background: {{menuBtnBg}}; display: flex; align-items: center; justify-content: center; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="6" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="18" cy="12" r="1.6"></circle></svg>
+</button>
+</div>
+</div>
+
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; gap: 22px; padding: 68px 24px 24px; overflow: auto">
+
+<sc-if value="{{cur.online}}" hint-placeholder-val="{{true}}">
+<section style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 22px; background: var(--card); animation: heroIn .45s cubic-bezier(.22,1,.36,1)">
+<div style="position: relative; width: 140px; height: 100px; flex: none">
+<sc-if value="{{ringing}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; border-radius: 55px; border: 2px solid var(--accent); animation: pulse 1.6s cubic-bezier(.22,1,.36,1) infinite"></span>
+<span style="position: absolute; left: 50%; top: 50%; width: 110px; height: 110px; border-radius: 55px; border: 2px solid var(--accent); animation: pulse 1.6s cubic-bezier(.22,1,.36,1) .55s infinite"></span>
+</sc-if>
+<svg role="img" aria-label="Tablet" viewBox="0 0 140 100" width="140" height="100" style="position: relative; animation: {{wiggleAnim}}">
+<rect x="4" y="6" width="132" height="88" rx="12" style="fill: var(--devFrame)"></rect>
+<rect x="10" y="12" width="120" height="76" rx="7" style="fill: var(--devScreen)"></rect>
+<path d="M10 70 Q50 56 90 64 T130 60 V81 a7 7 0 0 1 -7 7 H17 a7 7 0 0 1 -7 -7 Z" style="fill: var(--accent); opacity: .35"></path>
+<circle cx="102" cy="34" r="9" style="fill: var(--accent); opacity: .5"></circle>
+</svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px">
+<span style="font-size: 22px; font-weight: 700; letter-spacing: -0.2px">{{cur.name}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2)"><span style="width: 7px; height: 7px; border-radius: 4px; background: var(--green)"></span>Bağlı · {{cur.net}} · {{cur.ip}}</span>
+<sc-if value="{{ringing}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 13px; font-weight: 600; color: var(--accent)">Cihaz çalıyor…</span>
+</sc-if>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px">
+<span style="font-size: 34px; font-weight: 600; letter-spacing: -0.5px; font-variant-numeric: tabular-nums">{{cur.battTxt}}</span>
+<span style="position: relative; width: 128px; height: 12px; border-radius: 6px; background: var(--off); overflow: hidden">
+<span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{cur.battW}}; border-radius: 6px; background: {{cur.battColor}}; transition: width .6s cubic-bezier(.22,1,.36,1)"></span>
+</span>
+<span style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M13 2 5 14h6l-1 8 8-12h-6z"></path></svg>Şarj oluyor</span>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{cur.offline}}" hint-placeholder-val="{{false}}">
+<section style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; padding: 24px 28px; border-radius: 22px; background: var(--card); animation: heroIn .45s cubic-bezier(.22,1,.36,1)">
+<svg role="img" aria-label="Telefon" viewBox="0 0 140 100" width="140" height="100" style="opacity: .5; flex: none">
+<rect x="44" y="2" width="52" height="96" rx="11" style="fill: var(--devFrame)"></rect>
+<rect x="49" y="7" width="42" height="86" rx="7" style="fill: var(--devScreen)"></rect>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px">
+<span style="font-size: 22px; font-weight: 700">{{cur.name}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text2)"><span style="width: 7px; height: 7px; border-radius: 4px; background: var(--off)"></span>Bağlı değil · Son görülme {{cur.seen}}</span>
+<span style="font-size: 13px; color: var(--text2); max-width: 420px">Cihaz aynı Wi‑Fi ağına katıldığında otomatik olarak bağlanır.</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px">
+<span style="font-size: 34px; font-weight: 600; color: var(--text2); font-variant-numeric: tabular-nums">{{cur.battTxt}}</span>
+<span style="font-size: 12px; color: var(--text2)">son bilinen</span>
+</div>
+</section>
+</sc-if>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 700">Eylemler</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; opacity: {{actOpacity}}; transition: opacity .3s">
+<button onClick="{{ping}}" class="tile" style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--sep); border-radius: 20px; text-align: left; min-height: 64px">
+<span style="width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; flex: none; background: {{pingIconBg}}; color: {{pingIconFg}}; transition: background .25s, color .25s">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.8; stroke-linecap: round; animation: {{wiggleAnim}}"><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600">{{pingTitle}}</span>
+<span style="font-size: 12px; color: var(--text2)">{{pingSub}}</span>
+</span>
+</button>
+<button onClick="{{sendClip}}" class="tile" style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--sep); border-radius: 20px; text-align: left; min-height: 64px">
+<span style="width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; flex: none; background: var(--accentSoft); color: var(--accent)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"></rect><rect x="9" y="2.5" width="6" height="3.5" rx="1"></rect><path d="M9 11h6M9 15h4"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600">Panoyu gönder</span>
+<span style="font-size: 12px; color: var(--text2)">⇧⌘C</span>
+</span>
+</button>
+<button onClick="{{sendFile}}" class="tile" style="display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--sep); border-radius: 20px; text-align: left; min-height: 64px">
+<span style="width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; flex: none; background: var(--accentSoft); color: var(--accent)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M12 17v-6M9.5 13.5 12 11l2.5 2.5"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600">Dosya gönder…</span>
+<span style="font-size: 12px; color: var(--text2)">⇧⌘F</span>
+</span>
+</button>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 13px; font-weight: 700">Senkronizasyon</h2>
+<div style="border-radius: 20px; background: var(--card); overflow: hidden">
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px">
+<span style="width: 30px; height: 30px; border-radius: 9px; background: #E07A1F; color: #fff; display: flex; align-items: center; justify-content: center; flex: none">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"></rect><rect x="9" y="2.5" width="6" height="3.5" rx="1"></rect></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+<span style="font-size: 13px; font-weight: 600">Pano senkronizasyonu</span>
+<span style="font-size: 12px; color: var(--text2)">Kopyaladığınız metin iki cihaz arasında otomatik paylaşılır.</span>
+</span>
+<button role="switch" aria-checked="{{clipOn}}" aria-label="Pano senkronizasyonu" onClick="{{toggleClip}}" class="sw" style="position: relative; width: 42px; height: 24px; border-radius: 12px; border: 0; padding: 0; flex: none; background: {{clipTrack}}; transition: background .25s">
+<span class="knob" style="position: absolute; top: 2px; left: 2px; width: 22px; height: 20px; border-radius: 10px; background: var(--knob); box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(0,0,0,0.04); transform: translateX({{clipKnob}}px)"></span>
+</button>
+</div>
+<div style="height: 1px; background: var(--sep); margin-left: 60px"></div>
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px">
+<span style="width: 30px; height: 30px; border-radius: 9px; background: #5B5BD6; color: #fff; display: flex; align-items: center; justify-content: center; flex: none">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M16 9.5l5 5M21 9.5l-5 5"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+<span style="font-size: 13px; font-weight: 600">Arama gelince sesi kapat</span>
+<span style="font-size: 12px; color: var(--text2)">Telefon çaldığında bilgisayarın sesi kısılır, arama bitince geri açılır.</span>
+</span>
+<button role="switch" aria-checked="{{muteOn}}" aria-label="Arama gelince sesi kapat" onClick="{{toggleMute}}" class="sw" style="position: relative; width: 42px; height: 24px; border-radius: 12px; border: 0; padding: 0; flex: none; background: {{muteTrack}}; transition: background .25s">
+<span class="knob" style="position: absolute; top: 2px; left: 2px; width: 22px; height: 20px; border-radius: 10px; background: var(--knob); box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(0,0,0,0.04); transform: translateX({{muteKnob}}px)"></span>
+</button>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 13px; font-weight: 700">Aktarımlar</h2>
+<button onClick="{{clearDone}}" class="btn glass sm" style="display: inline-flex; align-items: center; height: 28px; box-sizing: border-box; padding: 0 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--accent)"><span>Tamamlananları temizle</span></button>
+</div>
+<div onDragOver="{{onDragOver}}" onDragLeave="{{onDragLeave}}" onDrop="{{onDrop}}" style="display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; padding: 12px; border-radius: 20px; border: 1.5px dashed {{dzBorder}}; background: {{dzBg}}; color: var(--text2); font-size: 13px; transform: scale({{dzScale}}); transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, border-color .2s">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><path d="M12 15V4M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path></svg>
+<span>{{dzText}}</span>
+<button onClick="{{sendFile}}" class="btn pri" style="display: inline-flex; align-items: center; height: 28px; box-sizing: border-box; border: 0; padding: 0 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--onAccent)">Dosya seç</button>
+</div>
+<div style="border-radius: 20px; background: var(--card); overflow: hidden">
+<sc-for list="{{transfers}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid {{t.bt}}; animation: rowIn .5s cubic-bezier(.34,1.56,.64,1)">
+<span style="width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; background: var(--accentSoft); color: var(--accent)">
+<sc-if value="{{t.isOut}}" hint-placeholder-val="{{true}}">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+</sc-if>
+<sc-if value="{{t.isIn}}" hint-placeholder-val="{{false}}">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M12 5v14M6 13l6 6 6-6"></path></svg>
+</sc-if>
+</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+<span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.name}}</span>
+<sc-if value="{{t.active}}" hint-placeholder-val="{{false}}">
+<span style="display: flex; align-items: center; gap: 10px">
+<span style="position: relative; flex: 1; height: 5px; border-radius: 3px; background: var(--off); overflow: hidden">
+<span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{t.pW}}; border-radius: 3px; background: var(--accent); transition: width .14s linear"></span>
+</span>
+<span style="font-size: 11px; color: var(--text2); font-variant-numeric: tabular-nums; width: 34px; text-align: right">{{t.pTxt}}</span>
+</span>
+</sc-if>
+<sc-if value="{{t.done}}" hint-placeholder-val="{{true}}">
+<span style="font-size: 12px; color: var(--text2)">{{t.meta}}</span>
+</sc-if>
+</div>
+<sc-if value="{{t.done}}" hint-placeholder-val="{{true}}">
+<button aria-label="Finder'da göster" class="hov" style="width: 30px; height: 30px; border: 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: var(--text2)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.8; stroke-linecap: round"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4.5-4.5"></path></svg>
+</button>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{noTransfers}}" hint-placeholder-val="{{false}}">
+<div style="padding: 18px 16px; font-size: 13px; color: var(--text2); text-align: center">Henüz aktarım yok.</div>
+</sc-if>
+</div>
+</section>
+</div>
+
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<button onClick="{{closeMenu}}" aria-label="Menüyü kapat" style="position: absolute; inset: 0; z-index: 4; border: 0; padding: 0; background: transparent"></button>
+<div role="menu" class="glass-strong" style="position: absolute; z-index: 5; top: 52px; right: 16px; width: 248px; box-sizing: border-box; padding: 6px; border-radius: 16px; transform-origin: calc(100% - 20px) -24px; animation: menuMorph .42s cubic-bezier(.34,1.4,.64,1); display: flex; flex-direction: column; font-size: 13px">
+<button role="menuitem" onClick="{{sendClip}}" class="mi" style="display: flex; align-items: center; justify-content: space-between; height: 26px; padding: 0 10px; border: 0; border-radius: 8px; text-align: left"><span>Panoyu gönder</span><span class="sc">⇧⌘C</span></button>
+<button role="menuitem" onClick="{{sendFile}}" class="mi" style="display: flex; align-items: center; justify-content: space-between; height: 26px; padding: 0 10px; border: 0; border-radius: 8px; text-align: left"><span>Dosya gönder…</span><span class="sc">⇧⌘F</span></button>
+<button role="menuitem" onClick="{{ping}}" class="mi" style="display: flex; align-items: center; justify-content: space-between; height: 26px; padding: 0 10px; border: 0; border-radius: 8px; text-align: left"><span>Aygıtı bul</span><span class="sc">⌘R</span></button>
+<div style="height: 1px; background: var(--sep); margin: 5px 10px"></div>
+<a role="menuitem" href="Settings.dc.html" class="mi" style="display: flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 8px; text-decoration: none">Cihaz ayarları…</a>
+<button role="menuitem" onClick="{{unpair}}" class="mi danger" style="display: flex; align-items: center; height: 26px; padding: 0 10px; border: 0; border-radius: 8px; text-align: left">Eşleşmeyi kaldır…</button>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="glass-strong" style="position: absolute; z-index: 6; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 10px 18px 10px 14px; border-radius: 999px; color: var(--text); font-size: 13px; font-weight: 500; white-space: nowrap; animation: toastIn .5s cubic-bezier(.34,1.56,.64,1)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--accent)"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+<span>{{toastMsg}}</span>
+</div>
+</sc-if>
+</main>
+
+<sc-if value="{{isWin}}" hint-placeholder-val="{{false}}">
+<div style="position: absolute; top: 0; right: 0; z-index: 20; display: flex">
+<button aria-label="Simge durumuna küçült" class="cap"><svg aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" style="stroke-width: 1"><path d="M0 5.5h10"></path></svg></button>
+<button aria-label="Ekranı kapla" class="cap"><svg aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" style="stroke-width: 1"><rect x="0.5" y="0.5" width="9" height="9"></rect></svg></button>
+<button aria-label="Kapat" class="cap close" style="border-top-right-radius: 26px"><svg aria-hidden="true" viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" style="stroke-width: 1"><path d="M0 0l10 10M10 0L0 10"></path></svg></button>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"solid":{"editor":"boolean","default":false,"section":"Erişilebilirlik"},"platform":{"editor":"enum","options":["macos","windows"],"default":"windows","section":"Platform"},"$preview":{"width":1280,"height":780}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sel: 'tab', menu: false, ringing: false, toast: '', toastN: 0, mute: true, clip: true, drag: false, nid: 3,
+      transfers: [
+        { id: 2, name: 'Proje_Sunum_v3.pdf', size: '4,2 MB', dir: 'out', p: 100, when: '14:32' },
+        { id: 1, name: 'IMG_2041.HEIC', size: '2,8 MB', dir: 'in', p: 100, when: 'Dün' }
+      ]
+    };
+    this.timers = [];
+    this.iv = null;
+    this.ringT = null;
+  }
+  componentWillUnmount() {
+    this.timers.forEach((t) => clearTimeout(t));
+    if (this.iv) clearInterval(this.iv);
+    if (this.ringT) clearTimeout(this.ringT);
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  showToast(msg) {
+    const n = this.state.toastN + 1;
+    this.setState({ toast: msg, toastN: n });
+    this.later(() => { if (this.state.toastN === n) this.setState({ toast: '' }); }, 2400);
+  }
+  fmt(b) {
+    if (b >= 1048576) return (b / 1048576).toFixed(1).replace('.', ',') + ' MB';
+    return Math.max(1, Math.round(b / 1024)) + ' KB';
+  }
+  addTransfers(list) {
+    let id = this.state.nid;
+    const fresh = list.map((f) => ({ id: id++, name: f.name, size: f.size, dir: 'out', p: 0, when: 'Şimdi' }));
+    this.setState({ nid: id, menu: false, transfers: fresh.concat(this.state.transfers).slice(0, 6) });
+    this.tick();
+  }
+  tick() {
+    if (this.iv) return;
+    this.iv = setInterval(() => {
+      let active = false;
+      const done = [];
+      const ts = this.state.transfers.map((t) => {
+        if (t.p < 100) {
+          const p = Math.min(100, t.p + 3 + Math.floor(Math.random() * 8));
+          if (p < 100) active = true; else done.push(t.name);
+          return Object.assign({}, t, { p: p });
+        }
+        return t;
+      });
+      this.setState({ transfers: ts });
+      done.forEach((n) => this.showToast(n + ' gönderildi'));
+      if (!active) { clearInterval(this.iv); this.iv = null; }
+    }, 140);
+  }
+  renderVals() {
+    const s = this.state;
+    const dark = this.props.dark ?? false;
+    const solid = this.props.solid ?? false;
+    const isWin = (this.props.platform ?? 'windows') === 'windows';
+    const devs = [
+      { id: 'tab', name: 'Galaxy Tab S10 FE', kind: 'tablet', online: true, batt: 78, net: 'Wi‑Fi', ip: '192.168.1.101', seen: '' },
+      { id: 'phone', name: 'Galaxy S23', kind: 'phone', online: false, batt: 41, net: '', ip: '', seen: '2 saat önce' }
+    ];
+    const c = devs.find((d) => d.id === s.sel) || devs[0];
+    const online = c.online;
+    const devices = devs.map((d) => {
+      const sel = d.id === s.sel;
+      return {
+        name: d.name, isTab: d.kind === 'tablet', isPhone: d.kind === 'phone',
+        status: d.online ? ('Bağlı · %' + d.batt) : 'Bağlı değil',
+        dot: d.online ? 'var(--green)' : 'var(--off)',
+        rowBg: sel ? 'var(--selBg)' : 'transparent', selA: sel ? '1' : '0',
+        iconBg: sel ? 'var(--accent)' : 'var(--hover)',
+        iconFg: sel ? 'var(--onAccent)' : 'var(--text2)',
+        pick: () => this.setState({ sel: d.id, menu: false, ringing: false })
+      };
+    });
+    const ts = s.transfers.map((t, i) => ({
+      name: t.name, isOut: t.dir === 'out', isIn: t.dir === 'in',
+      active: t.p < 100, done: t.p >= 100,
+      pW: t.p + '%', pTxt: '%' + t.p,
+      meta: t.size + ' · ' + (t.dir === 'out' ? 'Gönderildi' : 'Alındı') + ' · ' + t.when,
+      bt: i === 0 ? 'transparent' : 'var(--sep)'
+    }));
+    const pickNames = ['Kat_Planı_A1.dwg', 'Render_Salon_04.png', 'Şartname_Rev2.docx', 'Cephe_Detay.pdf'];
+    const pickSizes = ['12,6 MB', '8,4 MB', '640 KB', '3,1 MB'];
+    return {
+      themeClass: (dark ? 'dark' : '') + (solid ? ' solid' : ''),
+      isMac: !isWin, isWin: isWin,
+      toolbarRight: isWin ? '150px' : '10px',
+      sbarPad: isWin ? '6px 10px 12px' : '14px 10px 12px',
+      devices: devices,
+      cur: {
+        name: c.name, online: online, offline: !online, net: c.net, ip: c.ip, seen: c.seen,
+        subtitle: online ? ('Bağlı · %' + c.batt) : 'Bağlı değil',
+        battTxt: '%' + c.batt, battW: c.batt + '%',
+        battColor: c.batt <= 15 ? 'var(--red)' : 'var(--green)'
+      },
+      ringing: s.ringing && online,
+      wiggleAnim: (s.ringing && online) ? 'wiggle .55s ease-in-out infinite' : 'none',
+      pingTitle: (s.ringing && online) ? 'Çalmayı durdur' : 'Aygıtı bul',
+      pingSub: (s.ringing && online) ? 'Cihaz çalıyor…' : 'Cihazı yüksek sesle çaldırır',
+      pingIconBg: (s.ringing && online) ? 'var(--accent)' : 'var(--accentSoft)',
+      pingIconFg: (s.ringing && online) ? 'var(--onAccent)' : 'var(--accent)',
+      actOpacity: online ? '1' : '0.4',
+      menuOpen: s.menu,
+      menuBtnBg: s.menu ? 'var(--hover)' : 'transparent',
+      clipOn: s.clip, clipTrack: s.clip ? 'var(--accent)' : 'var(--off)', clipKnob: s.clip ? 16 : 0,
+      muteOn: s.mute, muteTrack: s.mute ? 'var(--accent)' : 'var(--off)', muteKnob: s.mute ? 16 : 0,
+      transfers: ts,
+      noTransfers: ts.length === 0,
+      dzBorder: s.drag ? 'var(--accent)' : 'var(--sep2)',
+      dzBg: s.drag ? 'var(--accentSoft)' : 'transparent',
+      dzScale: s.drag ? '1.015' : '1',
+      dzText: s.drag ? 'Göndermek için bırakın' : 'Dosyaları buraya sürükleyin ya da',
+      hasToast: !!s.toast,
+      toastMsg: s.toast,
+      toggleMenu: () => this.setState({ menu: !s.menu }),
+      closeMenu: () => this.setState({ menu: false }),
+      ping: () => {
+        if (!online) return;
+        if (this.ringT) clearTimeout(this.ringT);
+        if (s.ringing) { this.setState({ ringing: false, menu: false }); return; }
+        this.setState({ ringing: true, menu: false });
+        this.ringT = setTimeout(() => this.setState({ ringing: false }), 5000);
+      },
+      sendClip: () => {
+        this.setState({ menu: false });
+        if (!online) return;
+        this.showToast('Pano ' + c.name + ' cihazına gönderildi');
+      },
+      sendFile: () => {
+        if (!online) { this.setState({ menu: false }); return; }
+        const k = Math.floor(Math.random() * pickNames.length);
+        this.addTransfers([{ name: pickNames[k], size: pickSizes[k] }]);
+      },
+      unpair: () => { this.setState({ menu: false }); this.showToast('Onay penceresi açılır: eşleşme kaldırılsın mı?'); },
+      toggleClip: () => this.setState({ clip: !s.clip }),
+      toggleMute: () => this.setState({ mute: !s.mute }),
+      clearDone: () => this.setState({ transfers: s.transfers.filter((t) => t.p < 100) }),
+      onDragOver: (e) => { e.preventDefault(); if (!this.state.drag) this.setState({ drag: true }); },
+      onDragLeave: () => this.setState({ drag: false }),
+      onDrop: (e) => {
+        e.preventDefault();
+        const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+        this.setState({ drag: false });
+        if (!online || files.length === 0) return;
+        this.addTransfers(files.slice(0, 4).map((f) => ({ name: f.name, size: this.fmt(f.size) })));
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

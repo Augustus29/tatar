@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tatar · Bağlantı sorunlarını gider</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.glass{background:rgba(255,255,255,0.32);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);-webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),inset 0 0 12px rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.10);position:relative}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,0.22) 100%);mix-blend-mode:soft-light}
+.glass>*{position:relative}
+.glass-strong{background:rgba(255,255,255,0.55)}
+.tr button,.tr input{font:inherit;cursor:default}
+.btn{transition:transform .4s cubic-bezier(.34,1.56,.64,1),filter .2s,opacity .2s}
+.btn:active{transform:scale(.95)}
+.btn:hover{filter:brightness(1.04)}
+.tr a{text-decoration:none}
+.fld{border:1px solid rgba(0,0,0,0.12);outline:none}
+.fld:focus{border-color:#0A7E8C;box-shadow:0 0 0 3px rgba(10,126,140,0.22)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes drop{0%{transform:translateY(-8px) scale(.97);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div class="tr" style="position: relative; width: 900px; height: 640px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #1D1D1F">
+<svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect x="0" y="0" width="1440" height="900" fill="#E8DFD3"></rect>
+<circle cx="1080" cy="300" r="120" fill="#F2CDA6"></circle>
+<path d="M0 560 Q360 470 720 520 T1440 500 V900 H0 Z" fill="#CDBCAA"></path>
+<path d="M420 508 a80 80 0 0 1 160 0 Z" fill="#CDBCAA"></path>
+<path d="M378 514 a40 40 0 0 1 80 0 Z" fill="#CDBCAA"></path>
+<path d="M542 514 a40 40 0 0 1 80 0 Z" fill="#CDBCAA"></path>
+<rect x="356" y="384" width="10" height="132" fill="#CDBCAA"></rect>
+<path d="M354 386 L361 340 L368 386 Z" fill="#CDBCAA"></path>
+<rect x="634" y="384" width="10" height="132" fill="#CDBCAA"></rect>
+<path d="M632 386 L639 340 L646 386 Z" fill="#CDBCAA"></path>
+<path d="M0 650 Q300 580 640 630 T1440 600 V900 H0 Z" fill="#AC9786"></path>
+<path d="M0 760 Q420 690 860 740 T1440 720 V900 H0 Z" fill="#7F6B5E"></path>
+</svg>
+
+<div style="position: absolute; left: 70px; top: 40px; width: 760px; height: 560px; border-radius: 26px; overflow: hidden; background: #FFFFFF; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 40px 100px rgba(0,0,0,0.30), 0 10px 30px rgba(0,0,0,0.12)">
+<div style="position: absolute; top: 0; left: 0; right: 0; height: 56px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom, #FFFFFF 30%, transparent)"></div>
+<div style="position: absolute; top: 0; left: 0; right: 0; height: 56px; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 0 18px; box-sizing: border-box">
+<div style="display: flex; gap: 8px">
+<button aria-label="Kapat" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FF5F57"></button>
+<button aria-label="Küçült" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FEBC2E"></button>
+<button aria-label="Tam ekran" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #28C840"></button>
+</div>
+<span style="font-size: 15px; font-weight: 700; margin-left: 8px">Bağlantı sorunlarını gider</span>
+<span style="flex: 1"></span>
+<sc-if value="{{isIdle}}" hint-placeholder-val="{{true}}">
+<button onClick="{{start}}" class="btn" style="height: 32px; padding: 0 18px; border: 0; border-radius: 999px; background: #0A7E8C; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); color: #fff; font-size: 13px; font-weight: 600">Kontrolü başlat</button>
+</sc-if>
+<sc-if value="{{isRunning}}" hint-placeholder-val="{{false}}">
+<span style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 16px; border-radius: 999px; background: rgba(10,126,140,0.12); color: #0A7E8C; font-size: 13px; font-weight: 600">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 2.6; stroke-linecap: round; animation: spin 0.9s linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+Denetleniyor…</span>
+</sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+<button onClick="{{reset}}" class="btn glass" style="height: 32px; padding: 0 18px; border-radius: 999px; color: #1D1D1F; font-size: 13px; font-weight: 600"><span>Tekrar dene</span></button>
+</sc-if>
+</div>
+
+<div style="position: absolute; inset: 0; padding: 64px 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; overflow: auto">
+<p style="margin: 0; font-size: 13px; line-height: 1.4; color: #5E5E63">{{intro}}</p>
+
+<div style="border-radius: 20px; background: #F5F5F7; overflow: hidden; flex: none">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+<div style="border-top: 1px solid {{r.bt}}">
+<div style="display: flex; align-items: center; gap: 14px; padding: 10px 16px; min-height: 52px; box-sizing: border-box">
+<span style="width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{r.isPending}}" hint-placeholder-val="{{false}}">
+<span style="width: 9px; height: 9px; border-radius: 5px; background: rgba(0,0,0,0.2)"></span>
+</sc-if>
+<sc-if value="{{r.isRunning}}" hint-placeholder-val="{{false}}">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0A7E8C" style="stroke-width: 2.6; stroke-linecap: round; animation: spin 0.9s linear infinite"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+</sc-if>
+<sc-if value="{{r.isOk}}" hint-placeholder-val="{{false}}">
+<span style="width: 24px; height: 24px; border-radius: 12px; background: #1F8A3B; display: flex; align-items: center; justify-content: center; animation: pop .45s cubic-bezier(.34,1.56,.64,1)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" style="stroke-width: 3; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+</span>
+</sc-if>
+<sc-if value="{{r.isWarn}}" hint-placeholder-val="{{false}}">
+<span style="width: 24px; height: 24px; border-radius: 12px; background: #E07A1F; display: flex; align-items: center; justify-content: center; animation: pop .45s cubic-bezier(.34,1.56,.64,1)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#fff" style="stroke-width: 3; stroke-linecap: round"><path d="M12 6v7M12 18h.01"></path></svg>
+</span>
+</sc-if>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+<span style="font-size: 13px; font-weight: 600">{{r.title}}</span>
+<span style="font-size: 12px; line-height: 1.35; color: {{r.detailColor}}">{{r.detail}}</span>
+</span>
+<sc-if value="{{r.hasFix}}" hint-placeholder-val="{{false}}">
+<button onClick="{{r.fix}}" class="btn glass" style="height: 28px; padding: 0 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #0A7E8C; flex: none; animation: rowIn .4s ease"><span>{{r.fixLabel}}</span></button>
+</sc-if>
+</div>
+<sc-if value="{{r.hasNote}}" hint-placeholder-val="{{false}}">
+<div style="margin: 0 16px 10px 54px; padding: 8px 12px; border-radius: 12px; background: rgba(10,126,140,0.10); font-size: 12px; line-height: 1.4; color: #1D1D1F; animation: drop .4s cubic-bezier(.34,1.4,.64,1)">{{r.note}}</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 20px; background: rgba(224,122,31,0.14); border: 1px solid rgba(224,122,31,0.28); flex: none; animation: drop .45s cubic-bezier(.34,1.4,.64,1)">
+<span style="width: 28px; height: 28px; border-radius: 14px; background: #E07A1F; display: flex; align-items: center; justify-content: center; flex: none">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fff" style="stroke-width: 3; stroke-linecap: round"><path d="M12 6v7M12 18h.01"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700; color: #7A3E00">{{summaryTitle}}</span>
+<span style="font-size: 12px; color: #5E5E63">Aşağıdaki adımlar çoğu zaman sorunu çözer; olmazsa cihazı elle ekleyebilirsiniz.</span>
+</span>
+<button onClick="{{toggleManual}}" aria-expanded="{{manual}}" class="btn glass" style="height: 30px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #1D1D1F; flex: none"><span>IP adresiyle elle ekle</span></button>
+</div>
+<sc-if value="{{manual}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-radius: 20px; background: #F5F5F7; flex: none; animation: drop .4s cubic-bezier(.34,1.4,.64,1)">
+<label for="ipfield" style="font-size: 13px; font-weight: 600; flex: none">Cihazın IP adresi</label>
+<input id="ipfield" class="fld" type="text" placeholder="192.168.1.x" value="{{ip}}" onInput="{{onIp}}" style="flex: 1; min-width: 0; height: 30px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; background: rgba(255,255,255,0.7); font-size: 13px; color: #1D1D1F">
+<button onClick="{{connect}}" class="btn" style="height: 30px; padding: 0 18px; border: 0; border-radius: 999px; background: #0A7E8C; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); color: #fff; font-size: 13px; font-weight: 600; flex: none">Bağlan</button>
+</div>
+<sc-if value="{{tried}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; color: #5E5E63; padding: 0 6px; animation: rowIn .4s ease">{{triedText}}</span>
+</sc-if>
+</sc-if>
+</sc-if>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":900,"height":640}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: -1, notes: {}, manual: false, ip: '', tried: false };
+    this.t = null;
+  }
+  componentWillUnmount() { if (this.t) clearTimeout(this.t); }
+  advance() {
+    this.t = setTimeout(() => {
+      const n = this.state.step + 1;
+      this.setState({ step: n });
+      if (n < 5) this.advance(); else this.t = null;
+    }, 700);
+  }
+  renderVals() {
+    const s = this.state;
+    const checks = [
+      { title: 'Wi‑Fi bağlantısı', ok: true, text: 'Ev ağına bağlı' },
+      { title: 'Yerel ağ izni', ok: true, text: 'Verildi' },
+      { title: 'Güvenlik duvarı', ok: false, text: '1714–1764 portları engelleniyor olabilir', fixLabel: 'Ayarları aç', note: 'Sistem Ayarları › Ağ › Güvenlik duvarı bölümünden Tatar için gelen bağlantılara izin verin.' },
+      { title: 'Cihaz keşfi', ok: false, text: 'Son 30 sn içinde yayın alınmadı. Modeminizde ‘AP izolasyonu’ açık olabilir.', fixLabel: 'Nasıl kapatılır?', note: 'Modem arayüzünde Kablosuz ayarlarını açıp ‘AP izolasyonu’ seçeneğini kapatın, sonra kontrolü tekrarlayın.' },
+      { title: 'Telefon uygulaması', ok: true, text: 'KDE Connect yanıt veriyor' }
+    ];
+    const rows = checks.map((c, i) => {
+      const finished = s.step > i;
+      const running = s.step === i;
+      const pending = !finished && !running;
+      const warn = finished && !c.ok;
+      return {
+        title: c.title,
+        detail: pending ? 'Bekliyor' : (running ? 'Denetleniyor…' : c.text),
+        detailColor: warn ? '#9A4A00' : '#5E5E63',
+        isPending: pending, isRunning: running, isOk: finished && c.ok, isWarn: warn,
+        hasFix: warn,
+        fixLabel: c.fixLabel || '',
+        fix: () => { const n = Object.assign({}, this.state.notes); n[i] = !n[i]; this.setState({ notes: n }); },
+        hasNote: warn && !!s.notes[i],
+        note: c.note || '',
+        bt: i === 0 ? 'transparent' : 'rgba(0,0,0,0.08)'
+      };
+    });
+    const issues = checks.filter((c) => !c.ok).length;
+    return {
+      isIdle: s.step < 0,
+      isRunning: s.step >= 0 && s.step < 5,
+      isDone: s.step >= 5,
+      intro: s.step < 0
+        ? 'Tatar, bilgisayarınızın telefonu bulmasını engelleyebilecek yaygın nedenleri sırayla denetler.'
+        : (s.step < 5 ? 'Denetimler sırayla çalışıyor, lütfen bekleyin…' : 'Denetim tamamlandı.'),
+      rows: rows,
+      summaryTitle: issues + ' sorun bulundu',
+      manual: s.manual,
+      ip: s.ip,
+      tried: s.tried,
+      triedText: 'Bağlantı isteği ' + (s.ip || 'girilen adres') + ' adresine gönderildi. Telefonda onay vermeniz gerekebilir.',
+      start: () => {
+        if (this.t) clearTimeout(this.t);
+        this.setState({ step: 0, notes: {}, manual: false, tried: false });
+        this.advance();
+      },
+      reset: () => {
+        if (this.t) clearTimeout(this.t);
+        this.t = null;
+        this.setState({ step: -1, notes: {}, manual: false, ip: '', tried: false });
+      },
+      toggleManual: () => this.setState({ manual: !s.manual }),
+      onIp: (e) => this.setState({ ip: e.target.value }),
+      connect: () => this.setState({ tried: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

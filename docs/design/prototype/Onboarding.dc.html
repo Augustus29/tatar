@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tatar · İlk açılış</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ob button{font:inherit;cursor:default}
+.ob a{text-decoration:none}
+.btn{transition:transform .4s cubic-bezier(.34,1.56,.64,1),filter .2s}
+.btn:active{transform:scale(.95)}
+.btn:hover{filter:brightness(.97)}
+.glass,.glass-strong{background:rgba(255,255,255,0.32);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);-webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),inset 0 0 12px rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.10);position:relative}
+.glass-strong{background:rgba(255,255,255,0.55)}
+.glass::before,.glass-strong::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,0.22) 100%);mix-blend-mode:soft-light}
+.glass>*,.glass-strong>*{position:relative}
+.dark .glass,.dark .glass-strong{background:rgba(40,40,46,0.38);border-color:rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 1px rgba(255,255,255,0.08),inset 0 0 12px rgba(255,255,255,0.06),0 10px 30px rgba(0,0,0,0.3),0 1px 3px rgba(0,0,0,0.2)}
+.dark .glass-strong{background:rgba(40,40,46,0.6)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@keyframes radar{0%{transform:translate(-50%,-50%) scale(.3);opacity:.7}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes gallop{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-2deg)}}
+</style>
+</helmet>
+<div class="ob" style="position: relative; width: 800px; height: 600px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #1D1D1F">
+<svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect x="0" y="0" width="1440" height="900" fill="#E8DFD3"></rect>
+<circle cx="1080" cy="300" r="120" fill="#F2CDA6"></circle>
+<path d="M0 560 Q360 470 720 520 T1440 500 V900 H0 Z" fill="#CDBCAA"></path>
+<path d="M0 650 Q300 580 640 630 T1440 600 V900 H0 Z" fill="#AC9786"></path>
+<path d="M0 760 Q420 690 860 740 T1440 720 V900 H0 Z" fill="#7F6B5E"></path>
+</svg>
+
+<div style="position: absolute; left: 60px; top: 30px; width: 680px; height: 540px; border-radius: 18px; overflow: hidden; background: rgba(250,250,252,0.82); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 40px 100px rgba(0,0,0,0.30), 0 10px 30px rgba(0,0,0,0.12); display: flex; flex-direction: column; align-items: center; padding: 18px 40px 28px; box-sizing: border-box">
+<div style="align-self: flex-start; display: flex; gap: 8px">
+<button aria-label="Kapat" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FF5F57"></button>
+<button aria-label="Küçült" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #FEBC2E"></button>
+<button aria-label="Tam ekran" style="width: 12px; height: 12px; border-radius: 6px; border: 0; padding: 0; background: #28C840"></button>
+</div>
+
+<span style="position: relative; width: 76px; height: 76px; border-radius: 17px; background: linear-gradient(180deg,#127A86,#0B5F69 55%,#08474F); display: flex; align-items: center; justify-content: center; margin-top: 6px; box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -2px 6px rgba(0,0,0,.25), 0 8px 22px rgba(11,95,105,0.35)">
+<span aria-hidden="true" style="position: absolute; inset: 0; border-radius: 17px; background: linear-gradient(160deg,rgba(255,255,255,0.28) 0%,rgba(255,255,255,0) 45%)"></span>
+<svg aria-hidden="true" viewBox="0 0 100 100" width="60" height="60" style="position: relative; animation: {{gallopAnim}}; filter: drop-shadow(0 -0.6px 0 rgba(255,255,255,0.6)) drop-shadow(0 2px 3px rgba(0,0,0,.25))"><g fill="#F4EBDD" stroke="#F4EBDD" style="stroke-linecap: round; stroke-linejoin: round; opacity: 0.92"><ellipse cx="48" cy="57" rx="21" ry="9.5" transform="rotate(-8 48 57)" style="stroke-width: 0"></ellipse><path d="M60 52 L69 36 L76 37 L71 57 Z" style="stroke-width: 2"></path><path d="M69 34 L81 30 L88 37 L85 41 L76 40 Z" style="stroke-width: 2"></path><path d="M63 60 L75 66 L86 61" fill="none" style="stroke-width: 5"></path><path d="M58 63 L67 74 L76 77" fill="none" style="stroke-width: 5"></path><path d="M35 61 L23 68 L12 65" fill="none" style="stroke-width: 5"></path><path d="M39 63 L31 75 L23 81" fill="none" style="stroke-width: 5"></path><path d="M29 53 Q17 47 9 57" fill="none" style="stroke-width: 4.5"></path><path d="M45 48 L51 31 L58 33 L55 50 Z" style="stroke-width: 2"></path><circle cx="57.5" cy="25.5" r="4.6" style="stroke-width: 0"></circle><path d="M54 37 L67 42" fill="none" style="stroke-width: 3.5"></path></g><path d="M51 32 Q38 26 28 33 Q38 33 47 40 Z" fill="#C8442F"></path></svg>
+</span>
+<h1 style="margin: 14px 0 4px; font-size: 22px; font-weight: 700">Tatar'a hoş geldiniz</h1>
+<p style="margin: 0 0 18px; font-size: 13px; color: #5E5E63; text-align: center; max-width: 420px">Telefonunuzla bilgisayarınız arasında dosya ve pano taşır, pil durumunu gösterir, aramada sesi kapatır.</p>
+
+<sc-if value="{{showSteps}}" hint-placeholder-val="{{true}}">
+<div style="width: 100%; border-radius: 20px; background: #F5F5F7; overflow: hidden">
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="3">
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-top: 1px solid {{st.bt}}">
+<span style="width: 28px; height: 28px; border-radius: 14px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: {{st.badgeBg}}; color: {{st.badgeFg}}; transition: background .3s">
+<sc-if value="{{st.done}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; animation: pop .45s cubic-bezier(.34,1.56,.64,1)"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></sc-if>
+<sc-if value="{{st.todo}}" hint-placeholder-val="{{true}}"><span>{{st.n}}</span></sc-if>
+</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600">{{st.title}}</span>
+<span style="font-size: 12px; color: #5E5E63">{{st.body}}</span>
+</span>
+<sc-if value="{{st.hasBtn}}" hint-placeholder-val="{{true}}">
+<button onClick="{{st.act}}" class="btn glass" style="height: 28px; padding: 0 14px; border-radius: 999px; flex: none; background: {{st.btnBg}}; color: {{st.btnFg}}; font-size: 12px; font-weight: 600">{{st.btn}}</button>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{searching}}" hint-placeholder-val="{{false}}">
+<div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 6px; animation: rise .4s cubic-bezier(.22,1,.36,1)">
+<div style="position: relative; width: 150px; height: 150px">
+<span style="position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; border-radius: 75px; border: 2px solid #0A7E8C; animation: radar 2.2s cubic-bezier(.22,1,.36,1) infinite"></span>
+<span style="position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; border-radius: 75px; border: 2px solid #0A7E8C; animation: radar 2.2s cubic-bezier(.22,1,.36,1) .73s infinite"></span>
+<span style="position: absolute; left: 50%; top: 50%; width: 150px; height: 150px; border-radius: 75px; border: 2px solid #0A7E8C; animation: radar 2.2s cubic-bezier(.22,1,.36,1) 1.46s infinite"></span>
+<span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 52px; height: 52px; border-radius: 26px; background: #0A7E8C; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 6px 18px rgba(10,126,140,0.35)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" style="stroke-width: 2; stroke-linecap: round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"></path><circle cx="12" cy="19.2" r="1" fill="currentColor"></circle></svg>
+</span>
+</div>
+<span style="font-size: 14px; font-weight: 600">Aynı ağdaki cihazlar aranıyor…</span>
+<span style="font-size: 12px; color: #5E5E63">Telefonunuzda KDE Connect'in açık olduğundan emin olun.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{found}}" hint-placeholder-val="{{false}}">
+<div style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; padding-top: 4px; animation: rise .45s cubic-bezier(.22,1,.36,1)">
+<div style="width: 100%; display: flex; align-items: center; gap: 14px; padding: 16px; box-sizing: border-box; border-radius: 20px; background: #F5F5F7; animation: pop .5s cubic-bezier(.34,1.56,.64,1)">
+<span style="width: 44px; height: 44px; border-radius: 14px; background: #0A7E8C; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M18 12h.01"></path></svg>
+</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 14px; font-weight: 700">Galaxy Tab S10 FE bulundu</span>
+<span style="font-size: 12px; color: #5E5E63">Aynı Wi‑Fi ağında · 192.168.1.101</span>
+</span>
+<a href="Pairing.dc.html" class="btn" style="height: 30px; display: flex; align-items: center; padding: 0 18px; border-radius: 999px; background: #0A7E8C; color: #fff; font-size: 13px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 12px rgba(10,126,140,0.3)">Eşleştir</a>
+</div>
+<button onClick="{{restart}}" style="border: 0; background: transparent; font-size: 12px; color: #0A7E8C; font-weight: 500">Baştan göster</button>
+</div>
+</sc-if>
+
+<span style="flex: 1"></span>
+<sc-if value="{{showSteps}}" hint-placeholder-val="{{true}}">
+<div style="align-self: stretch; display: flex; justify-content: space-between; align-items: center">
+<span style="font-size: 12px; color: #5E5E63">Telefonda KDE Connect gerekir.</span>
+<button onClick="{{next}}" class="btn glass" style="height: 30px; padding: 0 18px; border-radius: 999px; background: {{nextBg}}; color: {{nextFg}}; font-size: 13px; font-weight: 600; transition: background .3s, transform .4s cubic-bezier(.34,1.56,.64,1)">Cihaz ara</button>
+</div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":800,"height":600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { d1: false, d2: false, phase: 'steps' };
+    this.t = null;
+  }
+  componentWillUnmount() { if (this.t) clearTimeout(this.t); }
+  renderVals() {
+    const s = this.state;
+    const ready = s.d1 && s.d2;
+    const defs = [
+      { n: '1', title: 'Telefonunuza KDE Connect’i yükleyin', body: 'Google Play veya F-Droid’de ücretsiz.', done: s.d1, btn: 'Bağlantıyı kopyala', act: () => this.setState({ d1: true }) },
+      { n: '2', title: 'Yerel ağ erişimine izin verin', body: 'Aynı Wi‑Fi’daki cihazları bulmak için gerekir.', done: s.d2, btn: 'İzin ver', act: () => this.setState({ d2: true }) },
+      { n: '3', title: 'Aynı Wi‑Fi ağına bağlanın', body: 'Bilgisayar ve telefon aynı ağda olmalı.', done: false, btn: '', act: null }
+    ];
+    return {
+      showSteps: s.phase === 'steps',
+      searching: s.phase === 'search',
+      found: s.phase === 'found',
+      gallopAnim: s.phase === 'search' ? 'gallop .4s ease-in-out infinite' : 'none',
+      steps: defs.map((d, i) => ({
+        n: d.n, title: d.title, body: d.body, done: d.done, todo: !d.done,
+        hasBtn: !!d.btn && !d.done, btn: d.btn, act: d.act || (() => {}),
+        btnBg: i === 1 ? '#0A7E8C' : 'rgba(255,255,255,0.6)', btnFg: i === 1 ? '#fff' : '#1D1D1F',
+        badgeBg: d.done ? '#1F8A3B' : 'rgba(0,0,0,0.08)', badgeFg: d.done ? '#fff' : '#3A3A3C',
+        bt: i === 0 ? 'transparent' : 'rgba(0,0,0,0.08)'
+      })),
+      nextBg: ready ? '#0A7E8C' : 'rgba(255,255,255,0.6)',
+      nextFg: ready ? '#fff' : '#5E5E63',
+      next: () => {
+        if (!ready) { this.setState({ d1: true, d2: true }); return; }
+        this.setState({ phase: 'search' });
+        if (this.t) clearTimeout(this.t);
+        this.t = setTimeout(() => this.setState({ phase: 'found' }), 3200);
+      },
+      restart: () => this.setState({ d1: false, d2: false, phase: 'steps' })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tatar · Menü çubuğu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.glass{background:rgba(255,255,255,0.32);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);-webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),inset 0 0 12px rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.10);position:relative}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,0.22) 100%);mix-blend-mode:soft-light}
+.glass>*{position:relative}
+.glass-strong{background:rgba(255,255,255,0.55)}
+.dark .glass{background:rgba(40,40,46,0.38);border-color:rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 1px rgba(255,255,255,0.1),inset 0 0 12px rgba(255,255,255,0.06),0 10px 30px rgba(0,0,0,0.3),0 1px 3px rgba(0,0,0,0.2)}
+.dark .glass-strong{background:rgba(40,40,46,0.6)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+.mb button{font:inherit;color:inherit;cursor:default}
+.mb a{color:inherit;text-decoration:none}
+.qa{transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.qa:active{transform:scale(.95)}
+.qa:hover{filter:brightness(1.05)}
+.sw .knob{width:22px;transition:width .25s,transform .45s cubic-bezier(.34,1.56,.64,1)}
+.sw[data-on="true"] .knob{transform:translateX(16px)}
+.sw:active .knob{width:28px}
+.sw[data-on="true"]:active .knob{transform:translateX(10px)}
+.cap{transition:opacity .25s,transform .45s cubic-bezier(.34,1.56,.64,1)}
+.row{height:26px;box-sizing:border-box;align-items:center}
+.row:hover{background:#0A7E8C;color:#fff}
+.row:hover .sc{color:#fff}
+.clip{position:relative}
+.clip .acts{position:absolute;right:8px;top:0;bottom:0;display:flex;align-items:center;gap:2px;opacity:0;transition:opacity .15s}
+.clip:hover .acts,.clip:focus-within .acts{opacity:1}
+.clip:hover .tm,.clip:focus-within .tm{opacity:0}
+.cb{width:28px;height:28px;border:0;border-radius:14px;padding:0;background:rgba(255,255,255,0.7);color:#1D1D1F;display:flex;align-items:center;justify-content:center;transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.cb:hover{background:#0A7E8C;color:#fff}
+.cb:active{transform:scale(.92)}
+.tb{border:0;background:transparent;padding:2px 8px;height:22px;border-radius:11px;font-size:12px;font-weight:500;color:#0A7E8C;transition:transform .4s cubic-bezier(.34,1.56,.64,1),background .2s}
+.tb:hover{background:rgba(10,126,140,0.12)}
+.tb:active{transform:scale(.95)}
+@keyframes popIn{0%{transform:scale(.35);opacity:0;border-radius:40px}100%{transform:scale(1);opacity:1;border-radius:22px}}
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(.6);opacity:.6}100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-10deg)}75%{transform:rotate(9deg)}}
+@keyframes ride{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+</style>
+</helmet>
+<div class="mb" style="position: relative; width: 960px; height: 780px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #1D1D1F">
+<svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect x="0" y="0" width="1440" height="900" fill="#E8DFD3"></rect>
+<circle cx="1080" cy="300" r="120" fill="#F2CDA6"></circle>
+<path d="M0 560 Q360 470 720 520 T1440 500 V900 H0 Z" fill="#CDBCAA"></path>
+<path d="M420 508 a80 80 0 0 1 160 0 Z" fill="#CDBCAA"></path>
+<path d="M378 514 a40 40 0 0 1 80 0 Z" fill="#CDBCAA"></path>
+<path d="M542 514 a40 40 0 0 1 80 0 Z" fill="#CDBCAA"></path>
+<rect x="356" y="384" width="10" height="132" fill="#CDBCAA"></rect>
+<path d="M354 386 L361 340 L368 386 Z" fill="#CDBCAA"></path>
+<rect x="634" y="384" width="10" height="132" fill="#CDBCAA"></rect>
+<path d="M632 386 L639 340 L646 386 Z" fill="#CDBCAA"></path>
+<path d="M0 650 Q300 580 640 630 T1440 600 V900 H0 Z" fill="#AC9786"></path>
+<path d="M0 760 Q420 690 860 740 T1440 720 V900 H0 Z" fill="#7F6B5E"></path>
+</svg>
+
+<nav aria-label="Menü çubuğu" style="position: absolute; left: 0; right: 0; top: 0; height: 30px; display: flex; align-items: center; gap: 18px; padding: 0 14px; background: transparent; font-size: 13px; color: #1D1D1F; text-shadow: 0 0 6px rgba(255,255,255,0.6)">
+<span style="font-weight: 700">Finder</span>
+<span>Dosya</span><span>Düzen</span><span>Görüntü</span><span>Git</span><span>Pencere</span><span>Yardım</span>
+<span style="flex: 1"></span>
+<button onClick="{{toggle}}" aria-label="Tatar" aria-expanded="{{open}}" style="position: relative; height: 26px; width: 38px; border: 0; border-radius: 13px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; text-shadow: none">
+<span class="glass cap" aria-hidden="true" style="position: absolute; inset: 0; border-radius: 13px; opacity: {{capOp}}; transform: scale({{capScale}}); box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 3px 10px rgba(0,0,0,0.12)"></span>
+<svg aria-hidden="true" viewBox="0 0 100 100" width="20" height="20" style="position: relative; animation: {{rideAnim}}">
+<g fill="#1D1D1F" stroke="#1D1D1F" style="stroke-linecap: round; stroke-linejoin: round">
+<ellipse cx="48" cy="57" rx="21" ry="9.5" transform="rotate(-8 48 57)" style="stroke-width: 0"></ellipse>
+<path d="M60 52 L69 36 L76 37 L71 57 Z" style="stroke-width: 2"></path>
+<path d="M69 34 L81 30 L88 37 L85 41 L76 40 Z" style="stroke-width: 2"></path>
+<path d="M63 60 L75 66 L86 61" fill="none" style="stroke-width: 6"></path>
+<path d="M58 63 L67 74 L76 77" fill="none" style="stroke-width: 6"></path>
+<path d="M35 61 L23 68 L12 65" fill="none" style="stroke-width: 6"></path>
+<path d="M39 63 L31 75 L23 81" fill="none" style="stroke-width: 6"></path>
+<path d="M29 53 Q17 47 9 57" fill="none" style="stroke-width: 5"></path>
+<path d="M45 48 L51 31 L58 33 L55 50 Z" style="stroke-width: 2"></path>
+<circle cx="57.5" cy="25.5" r="5" style="stroke-width: 0"></circle>
+<path d="M54 37 L67 42" fill="none" style="stroke-width: 4"></path>
+</g>
+</svg>
+</button>
+<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#1D1D1F" style="stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(255,255,255,0.6))"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"></path><circle cx="12" cy="19.2" r="1" fill="#1D1D1F"></circle></svg>
+<svg aria-hidden="true" viewBox="0 0 30 16" width="26" height="14"><rect x="1" y="2" width="24" height="12" rx="3.5" fill="none" stroke="#1D1D1F" style="stroke-width: 1.2; opacity: .5"></rect><rect x="3" y="4" width="17" height="8" rx="2" fill="#1D1D1F"></rect><rect x="26.5" y="6" width="2" height="4" rx="1" fill="#1D1D1F" style="opacity: .5"></rect></svg>
+<span style="font-variant-numeric: tabular-nums">Sal 27 Eki  23:55</span>
+</nav>
+
+<sc-if value="{{open}}" hint-placeholder-val="{{true}}">
+<div role="dialog" aria-label="Tatar" class="glass glass-strong" style="position: absolute; top: 40px; right: 168px; width: 340px; padding: 14px; box-sizing: border-box; border-radius: 22px; max-height: 720px; overflow-y: auto; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 24px 60px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.12); transform-origin: 270px -22px; animation: popIn .42s cubic-bezier(.34,1.4,.64,1); display: flex; flex-direction: column; gap: 12px; text-shadow: none">
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 4px 4px 2px">
+<span style="width: 40px; height: 40px; border-radius: 13px; background: linear-gradient(180deg,#127A86,#0B5F69 55%,#08474F); box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -2px 6px rgba(0,0,0,.25); color: #F4EBDD; display: flex; align-items: center; justify-content: center; flex: none">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" style="stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M18 12h.01"></path></svg>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+<span style="font-size: 14px; font-weight: 700">Galaxy Tab S10 FE</span>
+<span style="display: flex; align-items: center; gap: 5px; font-size: 12px; color: #5E5E63"><span style="width: 6px; height: 6px; border-radius: 3px; background: #1F8A3B"></span>Bağlı · Wi‑Fi</span>
+</span>
+<span style="position: relative; width: 44px; height: 44px; flex: none">
+<svg role="img" aria-label="Pil yüzde 78, şarj oluyor" viewBox="0 0 44 44" width="44" height="44" style="transform: rotate(-90deg)">
+<circle cx="22" cy="22" r="18" fill="none" stroke="rgba(0,0,0,0.1)" style="stroke-width: 4"></circle>
+<circle cx="22" cy="22" r="18" fill="none" stroke="#1F8A3B" style="stroke-width: 4; stroke-linecap: round; stroke-dasharray: 88.2 200"></circle>
+</svg>
+<span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums">78</span>
+</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button onClick="{{ping}}" class="qa glass" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: 20px; color: #1D1D1F; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 3px 10px rgba(0,0,0,0.08)">
+<span style="position: relative; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: {{pingBg}}; color: {{pingFg}}; transition: background .25s">
+<sc-if value="{{ringing}}" hint-placeholder-val="{{false}}">
+<span style="position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; border-radius: 20px; border: 2px solid #0A7E8C; animation: pulse 1.4s ease-out infinite"></span>
+</sc-if>
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; animation: {{wiggleAnim}}"><circle cx="12" cy="12" r="1.8" fill="currentColor"></circle><path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"></path></svg>
+</span>
+<span style="font-size: 12px; font-weight: 500">{{pingLabel}}</span>
+</button>
+<button onClick="{{sendClip}}" class="qa glass" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: 20px; color: #1D1D1F; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 3px 10px rgba(0,0,0,0.08)">
+<span style="width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: {{clipBg}}; color: {{clipFg}}; transition: background .25s">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"></rect><rect x="9" y="2.5" width="6" height="3.5" rx="1"></rect><path d="M9 11h6M9 15h4"></path></svg>
+</span>
+<span style="font-size: 12px; font-weight: 500">{{clipLabel}}</span>
+</button>
+<button onClick="{{sendFile}}" class="qa glass" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: 20px; color: #1D1D1F; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 3px 10px rgba(0,0,0,0.08)">
+<span style="width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: #FFFFFF; color: #0A7E8C">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5M12 17v-6M9.5 13.5 12 11l2.5 2.5"></path></svg>
+</span>
+<span style="font-size: 12px; font-weight: 500">Dosya</span>
+</button>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.5)">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#5E5E63" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M16 9.5l5 5M21 9.5l-5 5"></path></svg>
+<span style="flex: 1; font-size: 13px">Arama gelince sesi kapat</span>
+<button role="switch" class="sw" data-on="{{muteOnStr}}" aria-checked="{{muteOn}}" aria-label="Arama gelince sesi kapat" onClick="{{toggleMute}}" style="position: relative; width: 42px; height: 24px; border-radius: 12px; border: 0; padding: 0; flex: none; overflow: hidden; background: {{muteTrack}}; box-shadow: inset 0 1px 2px rgba(0,0,0,0.15); transition: background .25s">
+<span class="knob" style="position: absolute; top: 2px; left: 2px; height: 20px; border-radius: 10px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(0,0,0,0.04)"></span>
+</button>
+</div>
+
+<sc-if value="{{hasTransfer}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.5)">
+<span style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 600">{{tName}}</span><span style="color: #5E5E63; font-variant-numeric: tabular-nums">{{tTxt}}</span></span>
+<span style="position: relative; height: 5px; border-radius: 3px; background: rgba(0,0,0,0.1); overflow: hidden"><span style="position: absolute; left: 0; top: 0; bottom: 0; width: {{tW}}; border-radius: 3px; background: #0A7E8C; transition: width .14s linear"></span></span>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<span style="font-size: 12px; font-weight: 600; color: #5E5E63">Pano geçmişi</span>
+<button class="tb" onClick="{{clearClips}}">Temizle</button>
+</div>
+<div style="border-radius: 14px; background: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.5); overflow: hidden">
+<sc-for list="{{clips}}" as="it" hint-placeholder-count="4">
+<div class="clip" style="display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; box-sizing: border-box; border-top: 1px solid {{it.bt}}; opacity: {{it.op}}">
+<span style="width: 16px; height: 16px; flex: none; display: flex; align-items: center; justify-content: center; color: #5E5E63">
+<sc-if value="{{it.isText}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M5 7V5h14v2M12 5v14M9 19h6"></path></svg></sc-if>
+<sc-if value="{{it.isLink}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg></sc-if>
+<sc-if value="{{it.isLock}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></sc-if>
+</span>
+<span style="flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{it.fg}}">{{it.text}}</span>
+<sc-if value="{{it.sent}}" hint-placeholder-val="{{false}}">
+<span style="flex: none; display: flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: #1F8A3B"><svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" style="stroke-width: 3; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>Gönderildi</span>
+</sc-if>
+<sc-if value="{{it.showTime}}" hint-placeholder-val="{{true}}">
+<span class="tm" style="flex: none; font-size: 11px; color: #5E5E63; font-variant-numeric: tabular-nums; transition: opacity .15s">{{it.time}}</span>
+</sc-if>
+<sc-if value="{{it.canSend}}" hint-placeholder-val="{{true}}">
+<span class="acts">
+<button class="cb" aria-label="Kopyala" onClick="{{it.copy}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><rect x="9" y="9" width="11" height="11" rx="2.5"></rect><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"></path></svg></button>
+<button class="cb" aria-label="Telefona gönder" onClick="{{it.send}}"><svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect><path d="M12 15V9M9.5 11.5 12 9l2.5 2.5"></path></svg></button>
+</span>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{noClips}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; justify-content: center; height: 40px; font-size: 12px; color: #5E5E63">Geçmiş boş</div>
+</sc-if>
+</div>
+</div>
+
+<div onDragOver="{{onDragOver}}" onDragLeave="{{onDragLeave}}" onDrop="{{onDrop}}" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 52px; border-radius: 16px; border: 1.5px dashed {{dzBorder}}; background: {{dzBg}}; font-size: 12px; color: #5E5E63; transform: scale({{dzScale}}); transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><path d="M12 15V4M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path></svg>
+<span>{{dzText}}</span>
+</div>
+
+<div style="height: 1px; background: rgba(0,0,0,0.12); margin: 0 4px"></div>
+<div style="display: flex; flex-direction: column; font-size: 13px; margin: -4px -4px 0">
+<a href="Main.dc.html" class="row" style="display: flex; justify-content: space-between; padding: 0 10px; border-radius: 8px">Tatar'ı aç<span class="sc" style="color: #5E5E63">⌘O</span></a>
+<a href="Settings.dc.html" class="row" style="display: flex; justify-content: space-between; padding: 0 10px; border-radius: 8px">Ayarlar…<span class="sc" style="color: #5E5E63">⌘,</span></a>
+<button class="row" style="display: flex; justify-content: space-between; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; text-align: left">Tatar'dan çık<span class="sc" style="color: #5E5E63">⌘Q</span></button>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":780}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: true, ringing: false, clipSent: false, mute: true, drag: false, t: null, sent: {}, cleared: false };
+    this.clipData = [
+      { id: 'c1', kind: 'link', text: 'https://meet.google.com/abc-defg-hij', time: 'şimdi' },
+      { id: 'c2', kind: 'text', text: 'Ofis adresi: Kuştepe Mah. … [ADRES]', time: '3 dk' },
+      { id: 'c3', kind: 'text', text: 'A-A kesiti kot +3.40 revize', time: '12 dk' },
+      { id: 'c4', kind: 'lock', text: '•••••• Şifre yöneticisinden · gönderilmedi', time: '1 sa' }
+    ];
+    this.timers = [];
+    this.iv = null;
+  }
+  componentWillUnmount() {
+    this.timers.forEach((x) => clearTimeout(x));
+    if (this.iv) clearInterval(this.iv);
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  start(name) {
+    if (this.iv) clearInterval(this.iv);
+    this.setState({ t: { name: name, p: 0 } });
+    this.iv = setInterval(() => {
+      const t = this.state.t;
+      if (!t) return;
+      const p = Math.min(100, t.p + 3 + Math.floor(Math.random() * 7));
+      this.setState({ t: { name: t.name, p: p } });
+      if (p >= 100) {
+        clearInterval(this.iv); this.iv = null;
+        this.later(() => this.setState({ t: null }), 1400);
+      }
+    }, 120);
+  }
+  renderVals() {
+    const s = this.state;
+    const t = s.t;
+    return {
+      open: s.open,
+      glyphBg: s.open ? 'rgba(0,0,0,0.12)' : 'transparent',
+      capOp: s.open ? '1' : '0',
+      capScale: s.open ? '1' : '0.7',
+      muteOnStr: s.mute ? 'true' : 'false',
+      rideAnim: t ? 'ride .35s ease-in-out infinite' : 'none',
+      ringing: s.ringing,
+      wiggleAnim: s.ringing ? 'wiggle .45s ease-in-out infinite' : 'none',
+      pingBg: s.ringing ? '#0A7E8C' : '#FFFFFF',
+      pingFg: s.ringing ? '#FFFFFF' : '#0A7E8C',
+      pingLabel: s.ringing ? 'Durdur' : 'Çaldır',
+      clipBg: s.clipSent ? '#1F8A3B' : '#FFFFFF',
+      clipFg: s.clipSent ? '#FFFFFF' : '#0A7E8C',
+      clipLabel: s.clipSent ? 'Gönderildi' : 'Pano',
+      muteOn: s.mute,
+      muteTrack: s.mute ? '#0A7E8C' : 'rgba(0,0,0,0.18)',
+      muteKnob: s.mute ? 14 : 0,
+      hasTransfer: !!t,
+      tName: t ? t.name : '',
+      tTxt: t ? (t.p >= 100 ? 'Gönderildi' : '%' + t.p) : '',
+      tW: t ? t.p + '%' : '0%',
+      dzBorder: s.drag ? '#0A7E8C' : 'rgba(0,0,0,0.2)',
+      dzBg: s.drag ? 'rgba(10,126,140,0.12)' : 'transparent',
+      dzScale: s.drag ? '1.03' : '1',
+      dzText: s.drag ? 'Göndermek için bırakın' : 'Dosyayı göndermek için buraya sürükleyin',
+      clips: s.cleared ? [] : this.clipData.map((c, i) => ({
+        text: c.text, time: c.time,
+        isLink: c.kind === 'link', isText: c.kind === 'text', isLock: c.kind === 'lock',
+        canSend: c.kind !== 'lock', sent: !!s.sent[c.id],
+        showTime: !s.sent[c.id],
+        fg: c.kind === 'lock' ? '#8A8A8F' : '#1D1D1F',
+        op: c.kind === 'lock' ? '0.8' : '1',
+        bt: i === 0 ? 'transparent' : 'rgba(0,0,0,0.08)',
+        copy: () => {},
+        send: () => {
+          this.setState({ sent: Object.assign({}, this.state.sent, { [c.id]: true }) });
+          this.later(() => this.setState({ sent: Object.assign({}, this.state.sent, { [c.id]: false }) }), 1600);
+        }
+      })),
+      noClips: s.cleared,
+      clearClips: () => this.setState({ cleared: true }),
+      toggle: () => this.setState({ open: !s.open }),
+      ping: () => {
+        const r = !s.ringing;
+        this.setState({ ringing: r });
+        if (r) this.later(() => this.setState({ ringing: false }), 4000);
+      },
+      sendClip: () => {
+        this.setState({ clipSent: true });
+        this.later(() => this.setState({ clipSent: false }), 1600);
+      },
+      sendFile: () => this.start('Kat_Planı_A1.dwg'),
+      toggleMute: () => this.setState({ mute: !s.mute }),
+      onDragOver: (e) => { e.preventDefault(); if (!this.state.drag) this.setState({ drag: true }); },
+      onDragLeave: () => this.setState({ drag: false }),
+      onDrop: (e) => {
+        e.preventDefault();
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        this.setState({ drag: false });
+        if (f) this.start(f.name);
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

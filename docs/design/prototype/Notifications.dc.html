@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Tatar · Bildirimler</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.glass{background:rgba(255,255,255,0.32);backdrop-filter:blur(22px) saturate(190%) brightness(1.04);-webkit-backdrop-filter:blur(22px) saturate(190%) brightness(1.04);border:1px solid rgba(255,255,255,0.55);box-shadow:inset 0 1px 0 rgba(255,255,255,0.85),inset 0 -1px 1px rgba(255,255,255,0.25),inset 0 0 12px rgba(255,255,255,0.18),0 10px 30px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.10);position:relative}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0) 38%,rgba(255,255,255,0) 62%,rgba(255,255,255,0.22) 100%);mix-blend-mode:soft-light}
+.glass>*{position:relative}
+.glass-strong{background:rgba(255,255,255,0.55)}
+.dark .glass{background:rgba(40,40,46,0.38);border-color:rgba(255,255,255,0.16);box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 1px rgba(255,255,255,0.1),inset 0 0 12px rgba(255,255,255,0.06),0 10px 30px rgba(0,0,0,0.3),0 1px 3px rgba(0,0,0,0.2)}
+.dark .glass-strong{background:rgba(40,40,46,0.6)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.pb{transition:transform .4s cubic-bezier(.34,1.56,.64,1),filter .2s}
+.pb:active{transform:scale(.95)}
+.pb:hover{filter:brightness(1.05)}
+.nf button{font:inherit;cursor:default}
+@keyframes slideIn{0%{transform:translateX(110%) scale(.96);opacity:0}100%{transform:none;opacity:1}}
+</style>
+</helmet>
+<div class="nf" style="position: relative; width: 440px; height: 640px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #1D1D1F">
+<svg aria-hidden="true" viewBox="0 0 440 640" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%">
+<rect x="0" y="0" width="440" height="640" fill="#E8DFD3"></rect>
+<circle cx="330" cy="210" r="90" fill="#F2CDA6"></circle>
+<path d="M0 400 Q120 350 240 380 T440 360 V640 H0 Z" fill="#CDBCAA"></path>
+<path d="M0 480 Q140 430 280 470 T440 450 V640 H0 Z" fill="#AC9786"></path>
+<path d="M0 560 Q160 520 300 550 T440 540 V640 H0 Z" fill="#7F6B5E"></path>
+</svg>
+
+<div style="position: absolute; top: 20px; right: 16px; width: 360px; display: flex; flex-direction: column; gap: 10px">
+
+<sc-for list="{{items}}" as="n" hint-placeholder-count="4">
+<article class="glass glass-strong" style="display: flex; gap: 12px; padding: 14px; border-radius: 22px; animation: slideIn .6s cubic-bezier(.34,1.3,.64,1) both; animation-delay: {{n.delay}}">
+<span style="position: relative; width: 40px; height: 40px; border-radius: 9px; flex: none; background: linear-gradient(180deg,#127A86,#0B5F69 55%,#08474F); box-shadow: inset 0 1px 1px rgba(255,255,255,.45), inset 0 -2px 6px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" viewBox="0 0 100 100" width="30" height="30" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)) drop-shadow(0 -0.6px 0 rgba(255,255,255,.6))">
+<g fill="rgba(244,235,221,0.92)" stroke="rgba(244,235,221,0.92)" style="stroke-linecap: round; stroke-linejoin: round">
+<ellipse cx="48" cy="57" rx="21" ry="9.5" transform="rotate(-8 48 57)" style="stroke-width: 0"></ellipse>
+<path d="M60 52 L69 36 L76 37 L71 57 Z" style="stroke-width: 2"></path>
+<path d="M69 34 L81 30 L88 37 L85 41 L76 40 Z" style="stroke-width: 2"></path>
+<path d="M63 60 L75 66 L86 61" fill="none" style="stroke-width: 5"></path>
+<path d="M58 63 L67 74 L76 77" fill="none" style="stroke-width: 5"></path>
+<path d="M35 61 L23 68 L12 65" fill="none" style="stroke-width: 5"></path>
+<path d="M39 63 L31 75 L23 81" fill="none" style="stroke-width: 5"></path>
+<path d="M29 53 Q17 47 9 57" fill="none" style="stroke-width: 4.5"></path>
+<path d="M45 48 L51 31 L58 33 L55 50 Z" style="stroke-width: 2"></path>
+<circle cx="57.5" cy="25.5" r="4.8" style="stroke-width: 0"></circle>
+<path d="M54 37 L67 42" fill="none" style="stroke-width: 3.5"></path>
+</g>
+<path d="M51 32 Q38 26 28 33 Q38 33 47 40 Z" fill="#C8442F"></path>
+</svg>
+</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px">
+<span style="font-size: 13px; font-weight: 700">{{n.title}}</span>
+<span style="font-size: 11px; color: #5E5E63; flex: none">{{n.time}}</span>
+</div>
+<span style="font-size: 13px; line-height: 1.35">{{n.body}}</span>
+<sc-if value="{{n.hasActions}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 8px; margin-top: 8px">
+<button class="pb glass" style="flex: 1; height: 30px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #1D1D1F; box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 1px rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.08)">{{n.a1}}</button>
+<button class="pb" style="flex: 1; height: 30px; border: 0; border-radius: 999px; background: #0A7E8C; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35); font-size: 12px; font-weight: 600; color: #fff">{{n.a2}}</button>
+</div>
+</sc-if>
+</div>
+</article>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":440,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const list = [
+      { title: 'Dosya alındı', time: 'şimdi', body: 'Galaxy Tab S10 FE cihazından IMG_2051.HEIC (3,4 MB) İndirilenler klasörüne kaydedildi.', hasActions: true, a1: 'Finder’da göster', a2: 'Aç' },
+      { title: 'Gelen arama · ses kapatıldı', time: '2 dk önce', body: 'Arama bittiğinde bilgisayarın sesi otomatik olarak geri açılacak.', hasActions: false },
+      { title: 'Eşleştirme isteği', time: '5 dk önce', body: 'Pixel 8 bu bilgisayarla eşleşmek istiyor. Doğrulama kodu: 7F3A 91C2', hasActions: true, a1: 'Reddet', a2: 'Kabul et' },
+      { title: 'Pil zayıf', time: '18 dk önce', body: 'Galaxy Tab S10 FE pili %15 seviyesinde.', hasActions: false }
+    ];
+    return { items: list.map((n, i) => Object.assign({}, n, { a1: n.a1 || '', a2: n.a2 || '', delay: (i * 0.12) + 's' })) };
+  }
+}
+</script>
+</body>
+</html>
