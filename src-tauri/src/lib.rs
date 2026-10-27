@@ -1,5 +1,6 @@
 mod diag;
 mod i18n;
+mod i18n_share;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod manager;
 mod platform;
@@ -11,13 +12,18 @@ mod protocol;
 mod shortcuts;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod store;
+mod transfer;
 
 use std::sync::Arc;
 
 use manager::{DeviceView, EventSink, IdentityView, ManagerConfig, ManagerHandle, PairingView};
+use plugins::share::{
+    DEFAULT_PAYLOAD_PORTS, ShareEnv, ShareNotice, ShareNotifier, SharePlugin, ShareService,
+};
 use protocol::cert::KeyringStore;
-use store::{Settings, SettingsPatch};
+use store::{Settings, SettingsPatch, SettingsStore};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
 
 /// Rust -> arayüz olayları Tauri olayı olarak gider.
@@ -173,6 +179,133 @@ fn app_info(app: AppHandle) -> serde_json::Value {
     serde_json::json!({ "version": app.package_info().version.to_string() })
 }
 
+// ---- Dosya aktarımı komutları (Aşama 5) ----
+
+type Share<'a> = State<'a, Arc<ShareService>>;
+
+#[tauri::command]
+#[allow(non_snake_case)]
+async fn send_files(svc: Share<'_>, deviceId: String, paths: Vec<String>) -> Result<(), String> {
+    svc.send_files(&deviceId, paths).map(|_| ())
+}
+
+#[tauri::command]
+async fn list_transfers(svc: Share<'_>) -> Result<Vec<transfer::Transfer>, String> {
+    Ok(svc.list())
+}
+
+#[tauri::command]
+async fn cancel_transfer(svc: Share<'_>, id: String) -> Result<(), String> {
+    svc.cancel_transfer(&id);
+    Ok(())
+}
+
+#[tauri::command]
+async fn retry_transfer(svc: Share<'_>, id: String) -> Result<(), String> {
+    svc.retry_transfer(&id)
+}
+
+/// Yerel dosya seçici (çoklu seçim). İptalde boş liste.
+#[tauri::command]
+async fn pick_files(app: AppHandle) -> Result<Vec<String>, String> {
+    let picked = app.dialog().file().blocking_pick_files();
+    Ok(picked
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|p| p.into_path().ok())
+        .map(|p| p.to_string_lossy().into_owned())
+        .collect())
+}
+
+#[tauri::command]
+async fn pick_folder(app: AppHandle) -> Result<Option<String>, String> {
+    Ok(app
+        .dialog()
+        .file()
+        .blocking_pick_folder()
+        .and_then(|p| p.into_path().ok())
+        .map(|p| p.to_string_lossy().into_owned()))
+}
+
+/// Finder/Explorer'da dosyayı seçili gösterir.
+#[tauri::command]
+async fn reveal_file(svc: Share<'_>, id: String) -> Result<(), String> {
+    let path = svc.file_path(&id).ok_or("dosya bulunamadı")?;
+    tauri_plugin_opener::reveal_item_in_dir(path).map_err(|e| e.to_string())
+}
+
+/// Alınan dosyayı varsayılan uygulamayla açar (yalnızca gelen ve bitmiş aktarımlar).
+#[tauri::command]
+async fn open_file(svc: Share<'_>, id: String) -> Result<(), String> {
+    if !svc.is_incoming(&id) {
+        return Err("yalnızca alınan dosyalar açılır".into());
+    }
+    let path = svc.file_path(&id).ok_or("dosya bulunamadı")?;
+    tauri_plugin_opener::open_path(path, None::<&str>).map_err(|e| e.to_string())
+}
+
+/// Uygulama katmanı: paylaşım bildirimleri (yerel bildirim + pano).
+struct AppNotifier {
+    app: AppHandle,
+    settings: Arc<SettingsStore>,
+    clipboard: Arc<plugins::clipboard::ClipboardPlugin>,
+}
+
+impl AppNotifier {
+    fn show(&self, title: String, body: String) {
+        if let Err(e) = self
+            .app
+            .notification()
+            .builder()
+            .title(title)
+            .body(body)
+            .show()
+        {
+            log::warn!("bildirim gösterilemedi: {e}");
+        }
+    }
+
+    fn set_clipboard(&self, text: &str) {
+        // Pano eklentisi üzerinden yazılır: geçmişe girer ve telefona geri yankılanmaz.
+        self.clipboard.apply_shared_text(text.to_string());
+    }
+}
+
+impl ShareNotifier for AppNotifier {
+    fn notify(&self, n: ShareNotice) {
+        let lang = i18n_share::resolve(&self.settings.get().language);
+        match n {
+            ShareNotice::FileReceived {
+                device,
+                name,
+                size,
+                folder,
+                ..
+            } => {
+                let (t, b) = i18n_share::file_received(
+                    lang,
+                    &device,
+                    &name,
+                    size,
+                    &folder.to_string_lossy(),
+                );
+                self.show(t, b);
+            }
+            ShareNotice::Text { device, text } => {
+                self.set_clipboard(&text);
+                let (t, b) = i18n_share::text_received(lang, &device);
+                self.show(t, b);
+            }
+            ShareNotice::Url { device, url } => {
+                // Bağlantı kendiliğinden açılmaz; panoya konur ve bildirilir.
+                self.set_clipboard(&url);
+                let (t, b) = i18n_share::url_received(lang, &device, &url);
+                self.show(t, b);
+            }
+        }
+    }
+}
+
 /// Protokol yöneticisini Tauri'nin tokio çalışma zamanında başlatır.
 fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = app.path().app_data_dir()?;
@@ -198,11 +331,38 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     registry.register(Arc::new(plugins::clipboard::ClipboardPluginHandle(
         clipboard.clone(),
     )));
+    let share = ShareService::new();
+    registry.register(Arc::new(SharePlugin(share.clone())));
     let cfg = ManagerConfig::production(data_dir, keys, registry);
-    let handle =
-        tauri::async_runtime::block_on(manager::start(cfg, Arc::new(TauriSink(app.clone()))))?;
+    let sink = Arc::new(TauriSink(app.clone()));
+    let handle = tauri::async_runtime::block_on(manager::start(cfg, sink.clone()))?;
     clipboard.start(handle.settings_store());
     shortcuts::register_all(app, &handle.get_settings().shortcuts);
+
+    // İndirme klasörü boşsa işletim sisteminin İndirilenler klasörünü yaz (arayüz yolu gösterir).
+    let default_dir = app
+        .path()
+        .download_dir()
+        .unwrap_or_else(|_| std::env::temp_dir());
+    if handle.get_settings().download_dir.trim().is_empty() {
+        handle.set_settings(SettingsPatch {
+            download_dir: Some(default_dir.to_string_lossy().into_owned()),
+            ..Default::default()
+        });
+    }
+    share.attach(ShareEnv {
+        local: handle.local_identity(),
+        settings: handle.settings_store(),
+        sink,
+        notifier: Arc::new(AppNotifier {
+            app: app.clone(),
+            settings: handle.settings_store(),
+            clipboard: clipboard.clone(),
+        }),
+        default_download_dir: default_dir,
+        payload_ports: DEFAULT_PAYLOAD_PORTS,
+    });
+    app.manage(share);
     app.manage(clipboard);
     app.manage(handle);
     Ok(())
@@ -215,6 +375,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             show_main_window,
             hide_popover,
@@ -237,7 +398,15 @@ pub fn run() {
             plugins::clipboard::get_clipboard_history,
             plugins::clipboard::clear_clipboard_history,
             plugins::clipboard::send_clipboard,
-            shortcuts::set_shortcut
+            shortcuts::set_shortcut,
+            send_files,
+            list_transfers,
+            cancel_transfer,
+            retry_transfer,
+            pick_files,
+            pick_folder,
+            reveal_file,
+            open_file
         ])
         .setup(|app| {
             popover::setup(app.handle())?;

@@ -372,6 +372,11 @@ impl ClipboardPlugin {
     }
 
     /// Ağdan gelen metni yerel panoya yazar (ayrı iş parçacığında; pano meşgul olabilir).
+    /// Paylaşımla gelen metin/bağlantıyı panoya yazar (yankı korumasıyla).
+    pub fn apply_shared_text(self: &Arc<Self>, text: String) {
+        self.apply_remote(text, now_ms());
+    }
+
     fn apply_remote(self: &Arc<Self>, text: String, ts: i64) {
         if text.is_empty() || text.len() > MAX_TEXT_BYTES {
             log::debug!("gelen pano içeriği yok sayıldı (boş ya da çok büyük)");

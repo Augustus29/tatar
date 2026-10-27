@@ -285,6 +285,8 @@ mod tests {
             name: "Phone".into(),
             peer_incoming: Arc::new(vec![]),
             tx,
+            peer_ip: None,
+            peer_cert: Arc::new(Vec::new()),
         };
         let pk = |body| NetworkPacket::new(TYPE_TELEPHONY, body);
         p.handle(&dev, &pk(json!({"event": "ringing"})));
