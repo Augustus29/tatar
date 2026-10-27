@@ -1,4 +1,4 @@
-//! macOS dışı yedek. Windows'ta "Saydamlık efektleri" kaydı Aşama 8'de okunacak.
+//! macOS ve Windows dışı yedek (Linux hedef değil ama derlenebilir kalsın).
 
 use tauri::AppHandle;
 
@@ -7,3 +7,11 @@ pub fn reduce_transparency() -> bool {
 }
 
 pub fn watch_reduce_transparency(_app: &AppHandle) {}
+
+pub fn apply_window_material(_app: &AppHandle) -> bool {
+    false
+}
+
+pub fn window_material_active() -> bool {
+    false
+}

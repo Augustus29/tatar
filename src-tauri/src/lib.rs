@@ -129,6 +129,12 @@ fn reduce_transparency() -> bool {
     platform::reduce_transparency()
 }
 
+/// Pencerede Windows 11 Mica zemini etkin mi? (Etkinse arayüz zemini hafif saydam olur.)
+#[tauri::command]
+fn window_material() -> bool {
+    platform::window_material_active()
+}
+
 // ---- Protokol komutları (sözleşme: src/lib/api.ts) ----
 
 #[tauri::command]
@@ -610,6 +616,7 @@ pub fn run() {
             resize_popover,
             quit_app,
             reduce_transparency,
+            window_material,
             list_devices,
             request_pair,
             accept_pair,
@@ -642,8 +649,11 @@ pub fn run() {
         .setup(|app| {
             popover::setup(app.handle())?;
             platform::watch_reduce_transparency(app.handle());
+            platform::apply_window_material(app.handle());
             start_protocol(app.handle())?;
             let settings = app.state::<ManagerHandle>().get_settings();
+            #[cfg(windows)]
+            popover::set_tray_menu(app.handle(), &settings.language)?;
             // Açılışta ayar → sistem eşitlemesi (Dock, tepsi, açılışta başlat).
             apply_settings_effects(app.handle(), None, &settings);
             // Oturum açılışında başlatılan uygulama pencereyi göstermeden menü çubuğunda açılır.

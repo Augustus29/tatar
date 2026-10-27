@@ -29,3 +29,13 @@ pub fn watch_reduce_transparency(app: &AppHandle) {
     };
     std::mem::forget(token);
 }
+
+/// macOS'ta pencere malzemesi `tauri.conf.json` / popover üzerinden verilir; arayüzün ek bir şey
+/// yapmasına gerek yok.
+pub fn apply_window_material(_app: &AppHandle) -> bool {
+    false
+}
+
+pub fn window_material_active() -> bool {
+    false
+}

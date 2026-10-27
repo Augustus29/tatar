@@ -18,6 +18,9 @@
 .sidebar.mac {
   padding-top: 46px;
 }
+.sidebar.win {
+  padding-top: 6px;
+}
 .sidebar .drag-top {
   position: absolute;
   top: 0;
@@ -151,6 +154,10 @@
   gap: 12px;
   padding: 0 10px 0 24px;
   pointer-events: none;
+}
+.toolbar.win {
+  /* Windows: sağ üstteki pencere düğmelerine (3 x 46 px) çarpmasın */
+  padding-right: 150px;
 }
 .toolbar .title {
   display: flex;
@@ -798,4 +805,44 @@
   height: 1px;
   background: var(--sep);
   margin: 0 4px;
+}
+
+/* Windows pencere düğmeleri (kaynak: prototype/MainWindows.dc.html) */
+.caps {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+}
+.cap {
+  width: 46px;
+  height: 32px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.cap:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+.dark .cap:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.cap.close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+/* Windows 11 Mica: pencere zemini hafif saydam (yalnızca "Saydamlığı azalt" kapalıyken) */
+html.mica:not(.solid) body:not(.popover-window) {
+  background: transparent;
+}
+html.mica:not(.solid) body:not(.popover-window) .app {
+  background: color-mix(in srgb, var(--winBg) 86%, transparent);
 }

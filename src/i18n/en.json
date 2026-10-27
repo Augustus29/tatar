@@ -4,6 +4,8 @@
   },
   "common": {
     "close": "Close",
+    "maximize": "Maximize",
+    "restore": "Restore",
     "minimize": "Minimize",
     "fullscreen": "Full screen",
     "cancel": "Cancel",
@@ -299,6 +301,8 @@
     "fallbackIp": "the entered address"
   },
   "notify": {
+    "trayOpen": "Open Tatar",
+    "trayQuit": "Quit Tatar",
     "fileReceivedTitle": "File received",
     "fileReceivedBody": "{name} ({size}) from {device} was saved to {folder}.",
     "showInFolder": "Show in Finder",

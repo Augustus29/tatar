@@ -4,6 +4,8 @@
   },
   "common": {
     "close": "Kapat",
+    "maximize": "Ekranı kapla",
+    "restore": "Önceki boyuta döndür",
     "minimize": "Simge durumuna küçült",
     "fullscreen": "Tam ekran",
     "cancel": "İptal",
@@ -299,6 +301,8 @@
     "fallbackIp": "girilen adres"
   },
   "notify": {
+    "trayOpen": "Tatar'ı aç",
+    "trayQuit": "Tatar'tan çık",
     "fileReceivedTitle": "Dosya alındı",
     "fileReceivedBody": "{device} cihazından {name} ({size}) {folder} klasörüne kaydedildi.",
     "showInFolder": "Finder’da göster",

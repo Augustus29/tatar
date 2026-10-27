@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '../i18n';
 import { api } from '../lib/api';
 import { actions, selectNearbyDevices, useStore } from '../lib/store';
-import { isMac } from '../lib/platform';
 import { BrandBadge } from '../components/BrandBadge';
 import { CheckIcon, DeviceIcon, WifiIcon } from '../components/icons';
 
@@ -87,7 +86,7 @@ export function Onboarding({ startAt = 'steps', onFinish }: OnboardingProps) {
 
   return (
     <div className="onb" role="region" aria-label={t('onboarding.welcome')}>
-      {isMac && <div className="drag-top" data-tauri-drag-region />}
+      <div className="drag-top" data-tauri-drag-region />
       <span style={{ marginTop: 6, animation: shown === 'search' ? 'gallop .4s ease-in-out infinite' : 'none', display: 'flex' }}>
         <BrandBadge size={76} radius={17} glyph={60} glow />
       </span>

@@ -8,6 +8,7 @@ import { useNow } from '../lib/useNow';
 import type { Device } from '../lib/api';
 import { Switch } from '../components/Switch';
 import { Toast } from '../components/Toast';
+import { WindowControls } from '../components/WindowControls';
 import { DeviceArt } from '../components/DeviceArt';
 import { TransferRow } from '../components/TransferRow';
 import {
@@ -181,13 +182,14 @@ export function MainWindow() {
         <Onboarding startAt={onbReopen ? 'search' : 'steps'} onFinish={finishOnboarding} />
         {/* Akış sırasında telefondan eşleştirme isteği gelirse de görünsün */}
         <PairingSheet />
+        {isWindows && <WindowControls />}
       </>
     );
   }
 
   return (
     <div className="app">
-      <aside className={`glass sbar sidebar${isMac ? ' mac' : ''}`}>
+      <aside className={`glass sbar sidebar${isMac ? ' mac' : ''}${isWindows ? ' win' : ''}`}>
         {isMac && <div className="drag-top" data-tauri-drag-region />}
         {view === 'settings' ? (
           <SettingsNav tab={tab} onTab={setTab} onBack={() => go('device')} deviceName={cur?.name ?? null} />
@@ -274,7 +276,7 @@ export function MainWindow() {
 
       <main className="main">
         <div className="toolbar-fade" />
-        <div className="toolbar" style={{ paddingRight: isWindows ? 150 : 10 }}>
+        <div className={`toolbar${isWindows ? ' win' : ''}`}>
           <div className="title" data-tauri-drag-region>
             <span className="t1">{title}</span>
             {subtitle && <span className="t2">{subtitle}</span>}
@@ -533,6 +535,7 @@ export function MainWindow() {
       </main>
 
       <PairingSheet />
+      {isWindows && <WindowControls />}
       {unpairTarget && <UnpairDialog device={unpairTarget} onConfirm={() => void confirmUnpair()} onCancel={() => setUnpairTarget(null)} />}
     </div>
   );

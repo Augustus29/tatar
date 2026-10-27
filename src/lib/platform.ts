@@ -1,6 +1,9 @@
 export type Platform = 'macos' | 'windows' | 'other';
 
 function detect(): Platform {
+  // Tarayıcıda önizleme için ?platform=windows | macos
+  const forced = new URLSearchParams(window.location.search).get('platform');
+  if (forced === 'windows' || forced === 'macos' || forced === 'other') return forced;
   const ua = navigator.userAgent;
   if (/Mac/i.test(ua)) return 'macos';
   if (/Windows/i.test(ua)) return 'windows';
