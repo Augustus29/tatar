@@ -3,12 +3,59 @@
 //!
 //! Çekirdek, bir paketi eklentiye YALNIZCA eşleşmiş cihazdan geldiyse iletir.
 
-use std::collections::BTreeSet;
-use std::sync::Arc;
+use std::collections::{BTreeSet, HashMap};
+use std::sync::{Arc, Mutex, OnceLock};
 
-use tokio::sync::mpsc;
+use serde_json::{Value, json};
+use tokio::sync::{Notify, mpsc};
 
 use crate::protocol::packet::NetworkPacket;
+use crate::store::{Settings, SettingsStore};
+
+pub mod battery;
+pub mod findmyphone;
+pub mod notifier;
+pub mod ping;
+pub mod telephony;
+
+/// Eklentiler ile yönetici arasında paylaşılan durum: ayarlar, pil bilgisi, arayüz yenileme isteği.
+#[derive(Default)]
+pub struct Shared {
+    settings: OnceLock<Arc<SettingsStore>>,
+    battery: Mutex<HashMap<String, (i64, bool)>>,
+    /// Değişince yönetici `devices-changed` yayar.
+    pub refresh: Notify,
+}
+
+impl Shared {
+    pub fn set_settings(&self, s: Arc<SettingsStore>) {
+        let _ = self.settings.set(s);
+    }
+    /// Henüz bağlanmadıysa (yalnızca testlerde) varsayılan ayarlar.
+    pub fn settings(&self) -> Settings {
+        self.settings.get().map(|s| s.get()).unwrap_or_default()
+    }
+    pub fn set_battery(&self, device_id: &str, charge: i64, charging: bool) {
+        self.battery
+            .lock()
+            .unwrap()
+            .insert(device_id.to_string(), (charge, charging));
+        self.refresh.notify_one();
+    }
+    pub fn clear_battery(&self, device_id: &str) {
+        if self.battery.lock().unwrap().remove(device_id).is_some() {
+            self.refresh.notify_one();
+        }
+    }
+    /// Arayüzün `Battery` biçimi: `{charge, charging}`.
+    pub fn battery_of(&self, device_id: &str) -> Option<Value> {
+        self.battery
+            .lock()
+            .unwrap()
+            .get(device_id)
+            .map(|(c, ch)| json!({"charge": c, "charging": ch}))
+    }
+}
 
 /// Bir eklentinin paket gönderebileceği, eşleşmiş ve bağlı bir cihaz.
 #[derive(Clone)]
@@ -51,11 +98,16 @@ pub trait Plugin: Send + Sync {
 #[derive(Default, Clone)]
 pub struct Registry {
     plugins: Vec<Arc<dyn Plugin>>,
+    shared: Arc<Shared>,
 }
 
 impl Registry {
     pub fn new() -> Registry {
         Registry::default()
+    }
+
+    pub fn shared(&self) -> Arc<Shared> {
+        self.shared.clone()
     }
 
     pub fn register(&mut self, plugin: Arc<dyn Plugin>) {

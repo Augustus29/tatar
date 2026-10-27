@@ -1,4 +1,5 @@
 mod diag;
+mod i18n;
 #[allow(dead_code)] // sonraki aşamalar kullanacak API
 mod manager;
 mod platform;
@@ -16,6 +17,7 @@ use manager::{DeviceView, EventSink, IdentityView, ManagerConfig, ManagerHandle,
 use protocol::cert::KeyringStore;
 use store::{Settings, SettingsPatch};
 use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+use tauri_plugin_notification::NotificationExt;
 
 /// Rust -> arayüz olayları Tauri olayı olarak gider.
 struct TauriSink(AppHandle);
@@ -23,6 +25,24 @@ struct TauriSink(AppHandle);
 impl EventSink for TauriSink {
     fn emit(&self, event: &str, payload: serde_json::Value) {
         let _ = self.0.emit(event, payload);
+    }
+}
+
+/// Sistem bildirimlerini Tauri bildirim eklentisiyle gönderir.
+struct TauriNotifier(AppHandle);
+
+impl plugins::notifier::Notifier for TauriNotifier {
+    fn notify(&self, title: &str, body: &str) {
+        if let Err(e) = self
+            .0
+            .notification()
+            .builder()
+            .title(title)
+            .body(body)
+            .show()
+        {
+            log::warn!("bildirim gösterilemedi: {e}");
+        }
     }
 }
 
@@ -108,6 +128,22 @@ fn add_device_by_ip(mgr: State<'_, ManagerHandle>, ip: String) -> Result<(), Str
     mgr.add_device_by_ip(&ip)
 }
 
+/// Telefona ping gönderir.
+#[tauri::command]
+#[allow(non_snake_case)]
+async fn ping_device(mgr: State<'_, ManagerHandle>, deviceId: String) -> Result<(), String> {
+    mgr.send_packet(&deviceId, plugins::ping::ping_packet())
+        .await
+}
+
+/// Telefonu çaldırır (`findmyphone`); tekrar çağrı da aynı paketi yollar.
+#[tauri::command]
+#[allow(non_snake_case)]
+async fn ring_device(mgr: State<'_, ManagerHandle>, deviceId: String) -> Result<(), String> {
+    mgr.send_packet(&deviceId, plugins::findmyphone::ring_packet())
+        .await
+}
+
 #[tauri::command]
 fn get_settings(mgr: State<'_, ManagerHandle>) -> Settings {
     mgr.get_settings()
@@ -140,8 +176,23 @@ fn app_info(app: AppHandle) -> serde_json::Value {
 fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = app.path().app_data_dir()?;
     let keys = Arc::new(KeyringStore::new(KEYCHAIN_SERVICE, KEYCHAIN_USER));
-    // Eklentiler sonraki aşamalarda burada kaydedilir.
-    let registry = plugins::Registry::new();
+    let mut registry = plugins::Registry::new();
+    let shared = registry.shared();
+    let notifier: plugins::notifier::SharedNotifier = Arc::new(TauriNotifier(app.clone()));
+    registry.register(Arc::new(plugins::battery::BatteryPlugin::new(
+        shared.clone(),
+        notifier.clone(),
+    )));
+    registry.register(Arc::new(plugins::ping::PingPlugin::new(
+        shared.clone(),
+        notifier.clone(),
+    )));
+    registry.register(Arc::new(plugins::findmyphone::FindMyPhonePlugin));
+    registry.register(Arc::new(plugins::telephony::TelephonyPlugin::new(
+        shared,
+        notifier,
+        platform::audio::SystemAudio,
+    )));
     let cfg = ManagerConfig::production(data_dir, keys, registry);
     let handle =
         tauri::async_runtime::block_on(manager::start(cfg, Arc::new(TauriSink(app.clone()))))?;
@@ -154,6 +205,7 @@ pub fn run() {
     diag::init();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             show_main_window,
             hide_popover,
@@ -166,6 +218,8 @@ pub fn run() {
             reject_pair,
             unpair,
             add_device_by_ip,
+            ping_device,
+            ring_device,
             get_settings,
             set_settings,
             get_identity,

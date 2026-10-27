@@ -128,6 +128,8 @@ enum Cmd {
     ConnectTo(SocketAddr),
     Send(String, NetworkPacket, oneshot::Sender<Result<(), String>>),
     IdentityChanged,
+    /// Eklentiler paylaşılan durumu (ör. pil) değiştirdi; cihaz listesini yeniden yayınla.
+    Refresh,
     Discovered(Discovered),
     Handshake {
         key: Option<String>,
@@ -295,6 +297,10 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
         cfg.data_dir.join("settings.json"),
     )));
 
+    // Eklentiler ayarlara ve arayüz yenilemeye bu paylaşılan nesne üzerinden ulaşır.
+    let shared = cfg.registry.shared();
+    shared.set_settings(settings.clone());
+
     let identity = Identity {
         device_id: local.device_id.clone(),
         device_name: effective_name(&settings.get()),
@@ -386,6 +392,18 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
                         result,
                     });
                 });
+            }
+        });
+    }
+
+    {
+        let (shared, tx) = (shared.clone(), tx.clone());
+        tokio::spawn(async move {
+            loop {
+                shared.refresh.notified().await;
+                if tx.send(Cmd::Refresh).is_err() {
+                    break;
+                }
             }
         });
     }
@@ -517,6 +535,7 @@ impl Core {
             Cmd::Send(id, packet, r) => {
                 let _ = r.send(self.send_to(&id, packet));
             }
+            Cmd::Refresh => self.emit_devices(),
             Cmd::IdentityChanged => {
                 let ident = self.identity.read().unwrap().clone();
                 if let Some(m) = &self.mdns
@@ -564,7 +583,7 @@ impl Core {
                 device_type: d.device_type.clone(),
                 reachable: d.link.is_some(),
                 paired: d.pair == PairState::Paired,
-                battery: None,
+                battery: self.registry.shared().battery_of(&d.id),
                 ip: d.ip.map(|i| i.to_string()),
                 last_seen: d.last_seen,
             })
