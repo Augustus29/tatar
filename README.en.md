@@ -69,6 +69,8 @@ If the computer does not appear in the list, open the **Troubleshooting** screen
 
 **Firewall and ports.** Traffic between the phone and the computer needs the ports **UDP and TCP 1714–1764** to be open. Some networks, especially guest networks, prevent devices from seeing each other. In that case, ask your network administrator for access, or put both devices on the same private network.
 
+**If the phone doesn't ring.** On Android, "Find my phone" needs KDE Connect's permissions on the phone: Settings → Apps → KDE Connect → **Notifications** (and **full-screen notifications**, if present) must be on; in KDE Connect, tap your computer → **Plugin settings** → **Ring my phone** must be enabled with its permissions granted.
+
 ## Development
 
 ### Requirements

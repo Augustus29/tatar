@@ -67,6 +67,8 @@ Tatar henüz resmî bir sürüm olarak yayınlanmadı. Derlenmiş dosyalar GitHu
 
 Bilgisayar listede görünmüyorsa Tatar'ın **Sorun giderme** ekranında **IP adresiyle elle ekle** seçeneğini kullanın ve telefonun IP adresini girin.
 
+**Telefon çalmıyorsa.** Android'de "Aygıtı bul" için telefondaki KDE Connect'in izinleri gerekir: Ayarlar → Uygulamalar → KDE Connect → **Bildirimler** (ve varsa **tam ekran bildirimleri**) açık olmalı; KDE Connect'te bilgisayarınıza dokunup **Eklenti ayarları** → **Telefonumu çaldır** açık ve izinli olmalı.
+
 **Güvenlik duvarı ve bağlantı noktaları.** Telefon ile bilgisayar arasındaki trafiğe şu portların açık olması gerekir: **UDP ve TCP 1714–1764**. Bazı ağlar (özellikle misafir ağları) cihazların birbirini görmesini engeller. Bu durumda ağ yöneticinizden izin isteyin ya da cihazları aynı özel ağa bağlayın.
 
 ## Geliştirme
