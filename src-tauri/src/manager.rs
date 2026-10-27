@@ -144,6 +144,7 @@ pub struct ManagerHandle {
     settings: Arc<SettingsStore>,
     identity: Arc<RwLock<Identity>>,
     tcp_port: u16,
+    local: Arc<LocalIdentity>,
 }
 
 impl ManagerHandle {
@@ -216,6 +217,10 @@ impl ManagerHandle {
     }
     pub fn tcp_port(&self) -> u16 {
         self.tcp_port
+    }
+    /// Bu cihazın sertifikası/anahtarı (yük soketlerinde TLS için eklentiler kullanır).
+    pub fn local_identity(&self) -> Arc<LocalIdentity> {
+        self.local.clone()
     }
     pub fn shutdown(&self) {
         self.cast(Cmd::Shutdown);
@@ -319,6 +324,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
         settings: settings.clone(),
         identity: identity.clone(),
         tcp_port,
+        local: local.clone(),
     };
 
     let discovered_cb: discovery::Callback = {
@@ -750,6 +756,8 @@ impl Core {
             name: d.name.clone(),
             peer_incoming: l.peer_incoming.clone(),
             tx: l.io.tx.clone(),
+            peer_ip: d.ip,
+            peer_cert: Arc::new(l.cert.clone()),
         })
     }
 

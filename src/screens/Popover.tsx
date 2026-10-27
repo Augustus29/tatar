@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import { useI18n } from '../i18n';
 import { formatShortcut } from '../lib/platform';
-import { call } from '../lib/tauri';
+import { call, onDragDrop } from '../lib/tauri';
 import { shortAgo } from '../lib/format';
 import { actions, selectPairedDevices, useStore } from '../lib/store';
 import {
@@ -58,6 +58,24 @@ export function Popover() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Tauri'de dosya bırakma pencere olayıyla gelir (yerel yollarla); HTML5 bırakma yalnızca tarayıcı önizlemesinde çalışır.
+  const dropTarget = useRef<string | null>(null);
+  const dropDeviceId = online && device ? device.id : null;
+  useEffect(() => {
+    dropTarget.current = dropDeviceId;
+  }, [dropDeviceId]);
+  useEffect(
+    () =>
+      onDragDrop((e) => {
+        if (e.type === 'drop') {
+          setDrag(false);
+          if (dropTarget.current && e.paths.length > 0) void actions.sendFiles(dropTarget.current, e.paths);
+        } else if (e.type === 'leave') setDrag(false);
+        else setDrag(true);
+      }),
+    [],
+  );
 
   // Aktif aktarımı göster; bitince kısa süre "Gönderildi" olarak kalsın.
   const active = transfers.find((x) => x.state === 'active' && x.deviceId === device?.id);

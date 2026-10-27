@@ -4,6 +4,7 @@
 //! Çekirdek, bir paketi eklentiye YALNIZCA eşleşmiş cihazdan geldiyse iletir.
 
 use std::collections::BTreeSet;
+use std::net::IpAddr;
 use std::sync::Arc;
 
 use tokio::sync::mpsc;
@@ -18,6 +19,10 @@ pub struct DeviceHandle {
     /// Karşı tarafın `incomingCapabilities` listesi; ilan etmediği türü göndermeyiz.
     pub peer_incoming: Arc<Vec<String>>,
     pub tx: mpsc::Sender<NetworkPacket>,
+    /// Kontrol bağlantısının karşı IP'si (dosya yükü soketleri hep bu adrese bağlanır/bundan kabul eder).
+    pub peer_ip: Option<IpAddr>,
+    /// Eşin sabitlenmiş sertifikası (DER); yük soketlerinde TLS doğrulaması için.
+    pub peer_cert: Arc<Vec<u8>>,
 }
 
 impl DeviceHandle {
@@ -33,6 +38,8 @@ impl DeviceHandle {
         self.tx.try_send(packet).is_ok()
     }
 }
+
+pub mod share;
 
 pub trait Plugin: Send + Sync {
     fn name(&self) -> &'static str;
@@ -136,6 +143,8 @@ mod tests {
             name: "x".into(),
             peer_incoming: Arc::new(vec!["kdeconnect.ping".into()]),
             tx,
+            peer_ip: None,
+            peer_cert: Arc::new(Vec::new()),
         };
         let p = NetworkPacket::new("kdeconnect.ping", serde_json::json!({}));
         assert!(r.dispatch(&dev, &p));

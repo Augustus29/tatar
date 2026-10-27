@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { useI18n } from '../i18n';
 import { formatShortcut, isMac, isWindows } from '../lib/platform';
-import { onEvent } from '../lib/tauri';
+import { onDragDrop } from '../lib/tauri';
 import { actions, onNotice, selectNearbyDevices, selectPairedDevices, useStore } from '../lib/store';
 import { seenAgo } from '../lib/format';
 import { useNow } from '../lib/useNow';
@@ -90,15 +90,13 @@ export function MainWindow() {
     dropTarget.current = online && cur ? cur.id : null;
   }, [online, cur]);
   useEffect(() => {
-    const offs = [
-      onEvent<{ paths: string[] }>('tauri://drag-drop', (p) => {
+    return onDragDrop((e) => {
+      if (e.type === 'drop') {
         setDrag(false);
-        if (dropTarget.current) void actions.sendFiles(dropTarget.current, p.paths);
-      }),
-      onEvent('tauri://drag-enter', () => setDrag(true)),
-      onEvent('tauri://drag-leave', () => setDrag(false)),
-    ];
-    return () => offs.forEach((off) => off());
+        if (dropTarget.current) void actions.sendFiles(dropTarget.current, e.paths);
+      } else if (e.type === 'leave') setDrag(false);
+      else setDrag(true);
+    });
   }, []);
 
   const closeMenu = () => setMenu(false);
