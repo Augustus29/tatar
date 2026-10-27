@@ -22,6 +22,22 @@ tauri = { version = "2", features = ["image-png", "macos-private-api", "tray-ico
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tokio = { version = "1.54", features = ["rt-multi-thread", "net", "io-util", "time", "sync", "macros"] }
+tokio-util = "0.7"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rcgen = { version = "0.14", default-features = false, features = ["ring", "pem"] }
+x509-parser = "0.18"
+sha2 = "0.11"
+hex = "0.4"
+mdns-sd = "0.21"
+keyring = "4.2"
+socket2 = { version = "0.6", features = ["all"] }
+log = "0.4"
+rand = "0.10"
+gethostname = "1.1"
+if-addrs = "0.15"
+time = "0.3"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
