@@ -23,7 +23,9 @@ use plugins::share::{
 };
 use protocol::cert::KeyringStore;
 use store::{Settings, SettingsPatch, SettingsStore};
-use tauri::{AppHandle, Emitter, Manager, RunEvent, State, WindowEvent};
+#[cfg(target_os = "macos")]
+use tauri::RunEvent;
+use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;

@@ -138,6 +138,7 @@ pub enum LocalNet {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Firewall {
     /// Duvar kapalı ya da bu platformda uygulanamaz.
+    #[cfg_attr(windows, allow(dead_code))] // Windows'ta yalnızca testler kurar
     Open,
     /// Uygulama için açık "izin ver" kuralı var.
     Allowed,
