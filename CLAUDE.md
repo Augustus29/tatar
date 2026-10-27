@@ -221,6 +221,8 @@ Animasyon ayarları, erişilebilirlik denetimi, performans (boştayken CPU ≈ 0
 ## 8. Çalışma kuralları (Claude Code için)
 
 - **Model ve alt ajanlar:** Proje sahibi kodlamanın **Sonnet** ile yapılmasını istiyor. Planlama ve gözden geçirmeyi sen yap; birbirinden bağımsız kod işlerini (ör. ayrı eklentiler, ayrı ekranlar) **Sonnet modelinde alt ajanlara** dağıt. Alt ajanlara bu dosyanın ilgili bölümünü ve dosya sınırlarını açıkça ver. Sonuçlarını birleştirmeden önce gözden geçir.
+  Alt ajanlar kendi alt ajanlarını açamaz (iç içe ajan yok). Protokol/güvenlik/arayüz işleri Sonnet'te, basit mekanik işler (CI, README) Haiku'da yapıldı.
+- **Uygulamayı denemek:** `npm run app` uygulamayı yeniden paketleyip açar (paket otomatik güncellenmez). İmzasız derlemelerde macOS her yeni derlemeden sonra Anahtar Zinciri iznini yeniden sorar; onaylanana kadar ağ dinlenmez.
 - **İletişim:** Proje sahibiyle **Türkçe** ve sade konuş. Jargonu açıkla veya kullanma. Uzun teknik log yapıştırma, ne olduğunu bir iki cümleyle özetle.
 - **Kararlar:** Geri alınması zor veya proje sahibini etkileyen kararları (yeni bağımlılık, lisans, imzalama, veri silme, mimari değişikliği) önce sor. Küçük teknik kararları kendin ver ve bir satırla bildir.
 - **Kapsam:** §1'deki kapsam dışı özelliklere istenmeden başlama.
