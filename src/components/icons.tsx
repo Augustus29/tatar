@@ -133,6 +133,55 @@ export const DropIcon = make(<path d="M12 15V4M8 8l4-4 4 4M5 14v4a2 2 0 0 0 2 2h
 });
 export const BackIcon = make(<path d="M15 5l-7 7 7 7" />, { strokeWidth: 1.9 });
 
+export const CloseIcon = make(<path d="M6 6l12 12M18 6 6 18" />, { strokeWidth: 1.9 });
+export const OpenIcon = make(<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />, {
+  strokeWidth: 1.8,
+});
+export const WifiIcon = make(
+  <>
+    <path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0" />
+    <circle cx="12" cy="19.2" r="1" fill="currentColor" />
+  </>,
+  { strokeWidth: 2, linejoin: false },
+);
+export const InfoMarkIcon = make(<path d="M12 11v6M12 7.5h.01" />, { strokeWidth: 2.4, linejoin: false });
+export const InfoCircleIcon = make(
+  <>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6M12 7.5h.01" />
+  </>,
+  { strokeWidth: 2, linejoin: false },
+);
+export const ExclaimIcon = make(<path d="M12 6v7M12 18h.01" />, { strokeWidth: 3, linejoin: false });
+export const KeysIcon = make(
+  <path d="M9 9V6a3 3 0 1 0-3 3h3zm0 0h6m-6 0v6m6-6V6a3 3 0 1 1 3 3h-3zm0 0v6m0 0h3a3 3 0 1 1-3 3v-3zm0 0H9m0 0v3a3 3 0 1 1-3-3h3z" />,
+  { strokeWidth: 2 },
+);
+export const TabletOutlineIcon = make(<rect x="3" y="5" width="18" height="14" rx="2.5" />, { strokeWidth: 2.2 });
+export const LaptopIcon = make(
+  <>
+    <rect x="4.5" y="5" width="15" height="11" rx="2" />
+    <path d="M2.5 19.5h19" />
+  </>,
+  { strokeWidth: 1.7 },
+);
+export const DesktopIcon = make(
+  <>
+    <rect x="3" y="4" width="18" height="12" rx="2" />
+    <path d="M8 20h8M12 16v4" />
+  </>,
+  { strokeWidth: 1.7 },
+);
+
+/** Cihaz türüne göre ikon. */
+export function DeviceIcon({ type, size, strokeWidth }: { type: string; size?: number; strokeWidth?: number }) {
+  const p = { size, strokeWidth };
+  if (type === 'phone') return <PhoneIcon {...p} />;
+  if (type === 'laptop') return <LaptopIcon {...p} />;
+  if (type === 'desktop' || type === 'tv') return <DesktopIcon {...p} />;
+  return <TabletIcon {...p} />;
+}
+
 /** Açılır menü düğmesindeki turkuaz çift ok. */
 export function ChevronsIcon() {
   return (

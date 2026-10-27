@@ -1,9 +1,13 @@
 {
-  "app": { "name": "Tatar" },
+  "app": {
+    "name": "Tatar"
+  },
   "common": {
     "close": "Close",
     "minimize": "Minimize",
-    "fullscreen": "Full screen"
+    "fullscreen": "Full screen",
+    "cancel": "Cancel",
+    "done": "Done"
   },
   "sidebar": {
     "myDevices": "My Devices",
@@ -24,7 +28,14 @@
     "wifi": "Wi‑Fi",
     "hoursAgo": "{n} hours ago",
     "tablet": "Tablet",
-    "phone": "Phone"
+    "phone": "Phone",
+    "justNow": "just now",
+    "minutesAgo": "{n} min ago",
+    "daysAgo": "{n} days ago",
+    "longAgo": "a long time ago",
+    "desktop": "Computer",
+    "laptop": "Laptop",
+    "batteryUnknown": "–"
   },
   "toolbar": {
     "findDevice": "Find device",
@@ -59,17 +70,29 @@
     "now": "Now",
     "yesterday": "Yesterday",
     "showInFolder": "Show in Finder",
-    "showInFolderWin": "Show in folder"
+    "showInFolderWin": "Show in folder",
+    "cancel": "Cancel",
+    "open": "Open",
+    "retry": "Retry",
+    "remove": "Remove",
+    "failedLost": "Connection lost · stopped at {p}%",
+    "failedOther": "Transfer failed · stopped at {p}%",
+    "cancelled": "Cancelled",
+    "failedAria": "Transfer failed: {name}"
   },
   "menu": {
     "findDevice": "Find device",
     "deviceSettings": "Device settings…",
-    "unpair": "Unpair…"
+    "unpair": "Unpair…",
+    "troubleshoot": "Troubleshoot connection…"
   },
   "toast": {
     "clipboardSent": "Clipboard sent to {device}",
     "fileSent": "{name} sent",
-    "unpairConfirm": "A confirmation dialog opens: unpair this device?"
+    "pairRejected": "{device} declined the pairing request",
+    "pairFailed": "Could not pair with {device}, please try again",
+    "unpaired": "{device} was removed from your paired devices.",
+    "clipboardCopied": "Copied to clipboard"
   },
   "popover": {
     "connectedWifi": "Connected · Wi‑Fi",
@@ -92,7 +115,10 @@
     "now": "now",
     "minutes": "{n} min",
     "hours": "{n} h",
-    "concealed": "•••••• From password manager · not sent"
+    "concealed": "•••••• From password manager · not sent",
+    "noDevice": "No paired device",
+    "noDeviceSub": "Open Tatar to pair a device.",
+    "batteryAriaPlain": "Battery {n} percent"
   },
   "settings": {
     "title": "General",
@@ -112,6 +138,184 @@
     "launchAtLogin": "Launch at login",
     "showInMenuBar": "Show in menu bar",
     "showInDock": "Show in Dock",
-    "stageNote": "The rest of the settings will arrive in later stages."
+    "navAria": "Settings sections",
+    "tabGeneral": "General",
+    "titleDevice": "Device settings",
+    "tabShortcuts": "Shortcuts",
+    "tabAbout": "About",
+    "computerName": "This computer’s name",
+    "incomingFiles": "Incoming files",
+    "change": "Change…",
+    "notifications": "Notifications",
+    "notifyFile": "Notify when a file arrives",
+    "notifyBattery": "Notify when device battery drops below 15%",
+    "shareBattery": "Share this computer’s battery status",
+    "shareBatterySub": "You will see the computer’s charge on your phone.",
+    "autoConnect": "Connect automatically on the same network",
+    "autoConnectSub": "If off, you start the connection manually.",
+    "unpair": "Unpair…",
+    "noDevice": "No paired devices yet.",
+    "troubleshootRow": "Connection problems",
+    "troubleshootSub": "Checks the common reasons a phone does not show up.",
+    "shortcutsHint": "These shortcuts work everywhere, even while Tatar is in the background.",
+    "pressKeys": "Press shortcut…",
+    "resetShortcuts": "Restore defaults",
+    "resetAria": "Reset",
+    "winNote": "On Windows, Ctrl is used instead of ⌘.",
+    "shortcutAria": "{label} shortcut: {keys}",
+    "shortcutRecordAria": "{label} shortcut: {keys}. Click to change.",
+    "shortcutTaken": "This shortcut is already assigned to another action.",
+    "shortcutFailed": "This shortcut could not be registered; another app may be using it.",
+    "scSendClip": "Send clipboard",
+    "scSendFile": "Send file",
+    "scFindDev": "Find device",
+    "scOpenWin": "Open Tatar window",
+    "scShowHist": "Show clipboard history",
+    "version": "Version {version}",
+    "aboutText": "An open-source desktop client compatible with the KDE Connect protocol. Named after the Ottoman post couriers who carried news from station to station.",
+    "github": "github.com/Augustus29/tatar"
+  },
+  "states": {
+    "lostLine": "Connection lost · reconnecting…",
+    "lostHint": "The device may be asleep.",
+    "troubleshoot": "Troubleshoot",
+    "unpairTitle": "Unpair {device}?",
+    "unpairBody": "This device will no longer be able to send files, clipboard or notifications. You will need to pair again to use it.",
+    "unpairAria": "Unpair",
+    "unpairConfirm": "Unpair",
+    "unpairCancel": "Cancel",
+    "noDevicesTitle": "No paired devices yet",
+    "noDevicesBody": "Open KDE Connect on your phone and join the same Wi‑Fi network.",
+    "search": "Find devices"
+  },
+  "pairing": {
+    "aria": "Pairing",
+    "outTitle": "Pairing with {device}",
+    "outBody": "Check that the code shown on your phone matches the one below, then confirm on the phone.",
+    "inTitle": "{device} wants to pair",
+    "inBody": "Make sure you see the same code on your phone. If the codes differ, reject the request.",
+    "codeAria": "Verification code {code}",
+    "waiting": "Waiting for confirmation on the phone…",
+    "reject": "Reject",
+    "accept": "Accept",
+    "successTitle": "Paired",
+    "successBody": "{device} is now one of your trusted devices. It connects automatically when you are on the same network.",
+    "statusUnpaired": "Not paired · on the same network",
+    "statusRequested": "Pairing request sent…"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Tatar",
+    "intro": "Moves files and the clipboard between your phone and computer, shows battery status and mutes sound during calls.",
+    "stepsAria": "Setup steps",
+    "step1Title": "Install KDE Connect on your phone",
+    "step1Body": "Free on Google Play or F-Droid.",
+    "step1Btn": "Copy link",
+    "step2Title": "Allow local network access",
+    "step2Body": "Needed to find devices on the same Wi‑Fi.",
+    "step2Btn": "Allow",
+    "step3Title": "Join the same Wi‑Fi network",
+    "step3Body": "Your computer and phone must be on the same network.",
+    "needPhone": "KDE Connect is required on your phone.",
+    "search": "Find devices",
+    "searching": "Looking for devices on your network…",
+    "searchingHint": "Make sure KDE Connect is open on your phone.",
+    "found": "{device} found",
+    "foundLine": "On the same Wi‑Fi network · {ip}",
+    "pair": "Pair",
+    "skip": "Skip for now",
+    "stepDone": "Done"
+  },
+  "troubleshoot": {
+    "title": "Troubleshoot connection",
+    "open": "Start…",
+    "introIdle": "Tatar checks the common reasons your computer might not find your phone, one by one.",
+    "introRunning": "Running the checks in order, please wait…",
+    "introDone": "Checks finished.",
+    "start": "Start check",
+    "running": "Checking…",
+    "retry": "Try again",
+    "pending": "Waiting",
+    "checking": "Checking…",
+    "fixLabel": "Open settings",
+    "wifi": {
+      "title": "Wi‑Fi connection",
+      "ok": "Connected to {ssid}",
+      "okNoName": "Connected to a Wi‑Fi network",
+      "fail": "You are not connected to a Wi‑Fi network",
+      "warn": "The network connection is unstable"
+    },
+    "localNetwork": {
+      "title": "Local network permission",
+      "ok": "Granted",
+      "fail": "Not granted. Devices cannot be found.",
+      "warn": "Could not determine the permission state",
+      "fix": "Open settings",
+      "noteMac": "Open System Settings › Privacy & Security › Local Network and allow Tatar.",
+      "noteWin": "Open Settings › Privacy & security and allow network access."
+    },
+    "firewall": {
+      "title": "Firewall",
+      "ok": "Incoming connections are allowed",
+      "fail": "Ports 1714–1764 are blocked",
+      "warn": "Ports 1714–1764 may be blocked",
+      "fix": "Open settings",
+      "noteMac": "In System Settings › Network › Firewall, allow incoming connections for Tatar.",
+      "noteWin": "In Windows Security › Firewall & network protection › Allow an app, allow Tatar."
+    },
+    "discovery": {
+      "title": "Device discovery",
+      "ok": "Broadcasts received from nearby devices",
+      "fail": "No broadcasts received",
+      "warn": "No broadcast received in the last 30 s. “AP isolation” may be on in your router.",
+      "fix": "How to turn it off",
+      "noteMac": "Open your router’s wireless settings, turn off “AP isolation”, then run the check again.",
+      "noteWin": "Open your router’s wireless settings, turn off “AP isolation”, then run the check again."
+    },
+    "phoneApp": {
+      "title": "Phone app",
+      "ok": "KDE Connect is responding",
+      "fail": "KDE Connect on the phone is not responding",
+      "warn": "KDE Connect on the phone is slow to respond"
+    },
+    "issues": "{n} issues found",
+    "noIssues": "No issues found",
+    "summaryHint": "The steps below usually fix it; if not, you can add the device manually.",
+    "allGood": "Everything looks fine. If the device still does not show up, you can add it manually.",
+    "manual": "Add by IP address",
+    "ipLabel": "Device IP address",
+    "ipPlaceholder": "192.168.1.x",
+    "connect": "Connect",
+    "ipInvalid": "Enter a valid IP address.",
+    "tried": "A connection request was sent to {ip}. You may need to confirm on the phone.",
+    "statusAria": {
+      "ok": "Passed",
+      "warn": "Warning",
+      "fail": "Problem",
+      "pending": "Waiting"
+    },
+    "fallbackIp": "the entered address"
+  },
+  "notify": {
+    "fileReceivedTitle": "File received",
+    "fileReceivedBody": "{name} ({size}) from {device} was saved to {folder}.",
+    "showInFolder": "Show in Finder",
+    "showInFolderWin": "Show in folder",
+    "open": "Open",
+    "callTitle": "Incoming call · sound muted",
+    "callBody": "This computer’s sound will be restored automatically when the call ends.",
+    "callLoweredTitle": "Incoming call · sound lowered",
+    "callLoweredBody": "This computer’s sound will return to normal when the call ends.",
+    "pairTitle": "Pairing request",
+    "pairBody": "{device} wants to pair with this computer. Verification code: {code}",
+    "reject": "Reject",
+    "accept": "Accept",
+    "batteryLowTitle": "Low battery",
+    "batteryLowBody": "{device} battery is at {level}%.",
+    "batteryFullTitle": "Battery full",
+    "batteryFullBody": "{device} is fully charged.",
+    "pingTitle": "Ping",
+    "pingBody": "Ping received from {device}.",
+    "now": "now",
+    "minutesAgo": "{n} min ago"
   }
 }

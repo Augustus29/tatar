@@ -31,6 +31,19 @@
   --brandTeal: #0b5f69;
   --brandRed: #c8442f;
   --brandParchment: #f4ebdd;
+  --orange: #e07a1f;
+  --warnText: #9a4a00;
+  --warnBg: rgba(224, 122, 31, 0.14);
+  --warnBorder: rgba(224, 122, 31, 0.28);
+  --warnStrong: #7a3e00;
+  --failText: #a12a21;
+  --redSoft: rgba(201, 55, 44, 0.14);
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
+  --noteBg: rgba(10, 126, 140, 0.1);
+  --codeBg: rgba(255, 255, 255, 0.85);
+  --codeBorder: rgba(0, 0, 0, 0.08);
+  --scrim: rgba(0, 0, 0, 0.14);
+  --keyCap: #ffffff;
 
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --springSoft: cubic-bezier(0.34, 1.4, 0.64, 1);
@@ -70,6 +83,17 @@
   --segBg: rgba(255, 255, 255, 0.1);
   --segKnob: #5a5a60;
   --muted: #8e8e93;
+  --warnText: #ffb070;
+  --warnBg: rgba(224, 122, 31, 0.2);
+  --warnBorder: rgba(224, 122, 31, 0.4);
+  --warnStrong: #ffc592;
+  --failText: #ff8a82;
+  --redSoft: rgba(255, 105, 97, 0.18);
+  --noteBg: rgba(63, 193, 204, 0.14);
+  --codeBg: rgba(255, 255, 255, 0.08);
+  --codeBorder: rgba(255, 255, 255, 0.12);
+  --scrim: rgba(0, 0, 0, 0.4);
+  --keyCap: #4a4a50;
 
   color-scheme: dark;
 }

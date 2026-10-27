@@ -1,9 +1,13 @@
 {
-  "app": { "name": "Tatar" },
+  "app": {
+    "name": "Tatar"
+  },
   "common": {
     "close": "Kapat",
     "minimize": "Simge durumuna küçült",
-    "fullscreen": "Tam ekran"
+    "fullscreen": "Tam ekran",
+    "cancel": "İptal",
+    "done": "Bitti"
   },
   "sidebar": {
     "myDevices": "Cihazlarım",
@@ -24,7 +28,14 @@
     "wifi": "Wi‑Fi",
     "hoursAgo": "{n} saat önce",
     "tablet": "Tablet",
-    "phone": "Telefon"
+    "phone": "Telefon",
+    "justNow": "az önce",
+    "minutesAgo": "{n} dk önce",
+    "daysAgo": "{n} gün önce",
+    "longAgo": "uzun süre önce",
+    "desktop": "Bilgisayar",
+    "laptop": "Dizüstü",
+    "batteryUnknown": "–"
   },
   "toolbar": {
     "findDevice": "Aygıtı bul",
@@ -59,17 +70,29 @@
     "now": "Şimdi",
     "yesterday": "Dün",
     "showInFolder": "Finder'da göster",
-    "showInFolderWin": "Klasörde göster"
+    "showInFolderWin": "Klasörde göster",
+    "cancel": "İptal",
+    "open": "Aç",
+    "retry": "Tekrar dene",
+    "remove": "Kaldır",
+    "failedLost": "Bağlantı koptu · %{p}'de durdu",
+    "failedOther": "Aktarım başarısız · %{p}'de durdu",
+    "cancelled": "İptal edildi",
+    "failedAria": "Aktarım başarısız: {name}"
   },
   "menu": {
     "findDevice": "Aygıtı bul",
     "deviceSettings": "Cihaz ayarları…",
-    "unpair": "Eşleşmeyi kaldır…"
+    "unpair": "Eşleşmeyi kaldır…",
+    "troubleshoot": "Bağlantı sorunlarını gider…"
   },
   "toast": {
     "clipboardSent": "Pano {device} cihazına gönderildi",
     "fileSent": "{name} gönderildi",
-    "unpairConfirm": "Onay penceresi açılır: eşleşme kaldırılsın mı?"
+    "pairRejected": "{device} eşleştirme isteğini reddetti",
+    "pairFailed": "{device} ile eşleştirilemedi, tekrar deneyin",
+    "unpaired": "{device} eşleşmiş cihazlarınız arasından çıkarıldı.",
+    "clipboardCopied": "Panoya kopyalandı"
   },
   "popover": {
     "connectedWifi": "Bağlı · Wi‑Fi",
@@ -92,7 +115,10 @@
     "now": "şimdi",
     "minutes": "{n} dk",
     "hours": "{n} sa",
-    "concealed": "•••••• Şifre yöneticisinden · gönderilmedi"
+    "concealed": "•••••• Şifre yöneticisinden · gönderilmedi",
+    "noDevice": "Eşleşmiş cihaz yok",
+    "noDeviceSub": "Tatar'ı açıp bir cihaz eşleştirin.",
+    "batteryAriaPlain": "Pil yüzde {n}"
   },
   "settings": {
     "title": "Genel",
@@ -112,6 +138,184 @@
     "launchAtLogin": "Oturum açıldığında başlat",
     "showInMenuBar": "Menü çubuğunda göster",
     "showInDock": "Dock’ta göster",
-    "stageNote": "Ayarların geri kalanı sonraki aşamalarda eklenecek."
+    "navAria": "Ayar bölümleri",
+    "tabGeneral": "Genel",
+    "titleDevice": "Cihaz ayarları",
+    "tabShortcuts": "Kısayollar",
+    "tabAbout": "Hakkında",
+    "computerName": "Bu bilgisayarın adı",
+    "incomingFiles": "Gelen dosyalar",
+    "change": "Değiştir…",
+    "notifications": "Bildirimler",
+    "notifyFile": "Dosya alındığında bildir",
+    "notifyBattery": "Cihaz pili %15 altına düşünce bildir",
+    "shareBattery": "Bu bilgisayarın pil durumunu paylaş",
+    "shareBatterySub": "Telefonda bilgisayarın şarjını görürsünüz.",
+    "autoConnect": "Aynı ağda otomatik bağlan",
+    "autoConnectSub": "Kapalıysa bağlantıyı elle başlatırsınız.",
+    "unpair": "Eşleşmeyi kaldır…",
+    "noDevice": "Henüz eşleşmiş cihaz yok.",
+    "troubleshootRow": "Bağlantı sorunları",
+    "troubleshootSub": "Telefon görünmüyorsa yaygın nedenleri denetler.",
+    "shortcutsHint": "Bu kısayollar Tatar arka plandayken de her yerde çalışır.",
+    "pressKeys": "Kısayola basın…",
+    "resetShortcuts": "Varsayılanlara dön",
+    "resetAria": "Sıfırla",
+    "winNote": "Windows'ta ⌘ yerine Ctrl kullanılır.",
+    "shortcutAria": "{label} kısayolu: {keys}",
+    "shortcutRecordAria": "{label} kısayolu: {keys}. Değiştirmek için tıklayın.",
+    "shortcutTaken": "Bu kısayol başka bir eyleme atanmış.",
+    "shortcutFailed": "Bu kısayol kaydedilemedi; başka bir uygulama kullanıyor olabilir.",
+    "scSendClip": "Panoyu gönder",
+    "scSendFile": "Dosya gönder",
+    "scFindDev": "Aygıtı bul",
+    "scOpenWin": "Tatar penceresini aç",
+    "scShowHist": "Pano geçmişini göster",
+    "version": "Sürüm {version}",
+    "aboutText": "KDE Connect protokolüyle uyumlu, açık kaynak bir masaüstü istemcisi. Adını Osmanlı'nın menzilden menzile haber taşıyan posta kuryelerinden alır.",
+    "github": "github.com/Augustus29/tatar"
+  },
+  "states": {
+    "lostLine": "Bağlantı koptu · yeniden bağlanılıyor…",
+    "lostHint": "Cihaz uyku modunda olabilir.",
+    "troubleshoot": "Sorun gider",
+    "unpairTitle": "{device} ile eşleşme kaldırılsın mı?",
+    "unpairBody": "Bu cihaz artık dosya, pano ve bildirim gönderemez. Tekrar kullanmak için yeniden eşleştirmeniz gerekir.",
+    "unpairAria": "Eşleşmeyi kaldır",
+    "unpairConfirm": "Eşleşmeyi kaldır",
+    "unpairCancel": "Vazgeç",
+    "noDevicesTitle": "Henüz eşleşmiş cihaz yok",
+    "noDevicesBody": "Telefonunuzda KDE Connect'i açın ve aynı Wi‑Fi ağına bağlanın.",
+    "search": "Cihaz ara"
+  },
+  "pairing": {
+    "aria": "Eşleştirme",
+    "outTitle": "{device} ile eşleştiriliyor",
+    "outBody": "Telefonunuzda görünen kodun aşağıdakiyle aynı olduğunu kontrol edin ve telefonda onaylayın.",
+    "inTitle": "{device} eşleşmek istiyor",
+    "inBody": "Telefonunuzda da aynı kodu gördüğünüzden emin olun. Kodlar farklıysa isteği reddedin.",
+    "codeAria": "Doğrulama kodu {code}",
+    "waiting": "Telefondan onay bekleniyor…",
+    "reject": "Reddet",
+    "accept": "Kabul et",
+    "successTitle": "Eşleştirildi",
+    "successBody": "{device} artık güvenilir cihazlarınız arasında. Aynı ağda olduğunuzda otomatik bağlanır.",
+    "statusUnpaired": "Eşleşmemiş · aynı ağda",
+    "statusRequested": "Eşleştirme isteği gönderildi…"
+  },
+  "onboarding": {
+    "welcome": "Tatar'a hoş geldiniz",
+    "intro": "Telefonunuzla bilgisayarınız arasında dosya ve pano taşır, pil durumunu gösterir, aramada sesi kapatır.",
+    "stepsAria": "Kurulum adımları",
+    "step1Title": "Telefonunuza KDE Connect’i yükleyin",
+    "step1Body": "Google Play veya F-Droid’de ücretsiz.",
+    "step1Btn": "Bağlantıyı kopyala",
+    "step2Title": "Yerel ağ erişimine izin verin",
+    "step2Body": "Aynı Wi‑Fi’daki cihazları bulmak için gerekir.",
+    "step2Btn": "İzin ver",
+    "step3Title": "Aynı Wi‑Fi ağına bağlanın",
+    "step3Body": "Bilgisayar ve telefon aynı ağda olmalı.",
+    "needPhone": "Telefonda KDE Connect gerekir.",
+    "search": "Cihaz ara",
+    "searching": "Aynı ağdaki cihazlar aranıyor…",
+    "searchingHint": "Telefonunuzda KDE Connect'in açık olduğundan emin olun.",
+    "found": "{device} bulundu",
+    "foundLine": "Aynı Wi‑Fi ağında · {ip}",
+    "pair": "Eşleştir",
+    "skip": "Şimdilik atla",
+    "stepDone": "Tamamlandı"
+  },
+  "troubleshoot": {
+    "title": "Bağlantı sorunlarını gider",
+    "open": "Başlat…",
+    "introIdle": "Tatar, bilgisayarınızın telefonu bulmasını engelleyebilecek yaygın nedenleri sırayla denetler.",
+    "introRunning": "Denetimler sırayla çalışıyor, lütfen bekleyin…",
+    "introDone": "Denetim tamamlandı.",
+    "start": "Kontrolü başlat",
+    "running": "Denetleniyor…",
+    "retry": "Tekrar dene",
+    "pending": "Bekliyor",
+    "checking": "Denetleniyor…",
+    "fixLabel": "Ayarları aç",
+    "wifi": {
+      "title": "Wi‑Fi bağlantısı",
+      "ok": "{ssid} ağına bağlı",
+      "okNoName": "Wi‑Fi ağına bağlı",
+      "fail": "Bir Wi‑Fi ağına bağlı değilsiniz",
+      "warn": "Ağ bağlantısı kararsız"
+    },
+    "localNetwork": {
+      "title": "Yerel ağ izni",
+      "ok": "Verildi",
+      "fail": "Verilmedi. Cihazlar bulunamaz.",
+      "warn": "İzin durumu belirlenemedi",
+      "fix": "Ayarları aç",
+      "noteMac": "Sistem Ayarları › Gizlilik ve Güvenlik › Yerel Ağ bölümünden Tatar’a izin verin.",
+      "noteWin": "Ayarlar › Gizlilik ve güvenlik bölümünden ağ erişimine izin verin."
+    },
+    "firewall": {
+      "title": "Güvenlik duvarı",
+      "ok": "Gelen bağlantılara izin var",
+      "fail": "1714–1764 portları engelleniyor",
+      "warn": "1714–1764 portları engelleniyor olabilir",
+      "fix": "Ayarları aç",
+      "noteMac": "Sistem Ayarları › Ağ › Güvenlik duvarı bölümünden Tatar için gelen bağlantılara izin verin.",
+      "noteWin": "Windows Güvenlik › Güvenlik duvarı ve ağ koruması › Bir uygulamaya izin ver bölümünden Tatar’a izin verin."
+    },
+    "discovery": {
+      "title": "Cihaz keşfi",
+      "ok": "Yakındaki cihazlardan yayın alındı",
+      "fail": "Hiç yayın alınamadı",
+      "warn": "Son 30 sn içinde yayın alınmadı. Modeminizde ‘AP izolasyonu’ açık olabilir.",
+      "fix": "Nasıl kapatılır?",
+      "noteMac": "Modem arayüzünde Kablosuz ayarlarını açıp ‘AP izolasyonu’ seçeneğini kapatın, sonra kontrolü tekrarlayın.",
+      "noteWin": "Modem arayüzünde Kablosuz ayarlarını açıp ‘AP izolasyonu’ seçeneğini kapatın, sonra kontrolü tekrarlayın."
+    },
+    "phoneApp": {
+      "title": "Telefon uygulaması",
+      "ok": "KDE Connect yanıt veriyor",
+      "fail": "Telefondaki KDE Connect yanıt vermiyor",
+      "warn": "Telefondaki KDE Connect geç yanıt veriyor"
+    },
+    "issues": "{n} sorun bulundu",
+    "noIssues": "Sorun bulunamadı",
+    "summaryHint": "Aşağıdaki adımlar çoğu zaman sorunu çözer; olmazsa cihazı elle ekleyebilirsiniz.",
+    "allGood": "Her şey yolunda görünüyor. Cihaz yine de görünmüyorsa elle ekleyebilirsiniz.",
+    "manual": "IP adresiyle elle ekle",
+    "ipLabel": "Cihazın IP adresi",
+    "ipPlaceholder": "192.168.1.x",
+    "connect": "Bağlan",
+    "ipInvalid": "Geçerli bir IP adresi girin.",
+    "tried": "Bağlantı isteği {ip} adresine gönderildi. Telefonda onay vermeniz gerekebilir.",
+    "statusAria": {
+      "ok": "Başarılı",
+      "warn": "Uyarı",
+      "fail": "Sorun var",
+      "pending": "Bekliyor"
+    },
+    "fallbackIp": "girilen adres"
+  },
+  "notify": {
+    "fileReceivedTitle": "Dosya alındı",
+    "fileReceivedBody": "{device} cihazından {name} ({size}) {folder} klasörüne kaydedildi.",
+    "showInFolder": "Finder’da göster",
+    "showInFolderWin": "Klasörde göster",
+    "open": "Aç",
+    "callTitle": "Gelen arama · ses kapatıldı",
+    "callBody": "Arama bittiğinde bilgisayarın sesi otomatik olarak geri açılacak.",
+    "callLoweredTitle": "Gelen arama · ses azaltıldı",
+    "callLoweredBody": "Arama bittiğinde bilgisayarın sesi eski haline dönecek.",
+    "pairTitle": "Eşleştirme isteği",
+    "pairBody": "{device} bu bilgisayarla eşleşmek istiyor. Doğrulama kodu: {code}",
+    "reject": "Reddet",
+    "accept": "Kabul et",
+    "batteryLowTitle": "Pil zayıf",
+    "batteryLowBody": "{device} pili %{level} seviyesinde.",
+    "batteryFullTitle": "Pil doldu",
+    "batteryFullBody": "{device} tamamen şarj oldu.",
+    "pingTitle": "Ping",
+    "pingBody": "{device} cihazından ping geldi.",
+    "now": "şimdi",
+    "minutesAgo": "{n} dk önce"
   }
 }

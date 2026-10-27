@@ -1,54 +1,72 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { useI18n } from '../i18n';
 import { formatShortcut, isMac, isWindows } from '../lib/platform';
-import { initialTransfers, mockDevices, pickBytes, pickNames, type MockTransfer } from '../lib/mock';
+import { onEvent } from '../lib/tauri';
+import { actions, onNotice, selectNearbyDevices, selectPairedDevices, useStore } from '../lib/store';
+import { seenAgo } from '../lib/format';
+import { useNow } from '../lib/useNow';
+import type { Device } from '../lib/api';
 import { Switch } from '../components/Switch';
 import { Toast } from '../components/Toast';
+import { DeviceArt } from '../components/DeviceArt';
+import { TransferRow } from '../components/TransferRow';
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
   ClipboardIcon,
   ClipboardPlainIcon,
+  DeviceIcon,
   DotsIcon,
   DropIcon,
   FileUploadIcon,
-  PhoneIcon,
   PingIcon,
-  SearchIcon,
   SlidersIcon,
   SpeakerOffIcon,
   SpinnerIcon,
-  TabletIcon,
 } from '../components/icons';
-import { SettingsPane } from './Settings';
+import { SettingsNav, SettingsPane, type SettingsTab } from './Settings';
+import { PairingSheet } from './Pairing';
+import { Onboarding } from './Onboarding';
+import { Troubleshoot } from './Troubleshoot';
+import { ConnectionLost, NoDevices, UnpairDialog } from './States';
 
-type View = 'device' | 'settings';
+type View = 'device' | 'settings' | 'troubleshoot';
 
-const SHORTCUT = {
-  clip: formatShortcut(['⇧', '⌘', 'C']),
-  file: formatShortcut(['⇧', '⌘', 'F']),
-  ring: formatShortcut(['⌘', 'R']),
-};
+/** Bu süreden kısa önce görülen ama şu an erişilemeyen cihaz "bağlantı koptu" sayılır. */
+const LOST_WINDOW_MS = 10 * 60_000;
 
 export function MainWindow() {
-  const { t, formatSize } = useI18n();
+  const { t } = useI18n();
+  const now = useNow();
+  const ready = useStore((s) => s.ready);
+  const settings = useStore((s) => s.settings);
+  const paired = useStore(selectPairedDevices);
+  const nearby = useStore(selectNearbyDevices);
+  const allTransfers = useStore((s) => s.transfers);
+  const pairing = useStore((s) => s.pairing);
+
   const [view, setView] = useState<View>('device');
-  const [sel, setSel] = useState(mockDevices[0].id);
+  const [tab, setTab] = useState<SettingsTab>('general');
+  const [selId, setSelId] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [ringing, setRinging] = useState(false);
   const [toast, setToast] = useState('');
-  const [clipOn, setClipOn] = useState(true);
-  const [muteOn, setMuteOn] = useState(true);
   const [drag, setDrag] = useState(false);
-  const [transfers, setTransfers] = useState<MockTransfer[]>(initialTransfers);
-  const nextId = useRef(3);
+  const [unpairTarget, setUnpairTarget] = useState<Device | null>(null);
+  const [onbReopen, setOnbReopen] = useState(false);
   const timers = useRef<number[]>([]);
   const ringTimer = useRef<number | undefined>(undefined);
-  const announced = useRef(new Set<number>(initialTransfers.map((x) => x.id)));
 
-  const cur = mockDevices.find((d) => d.id === sel) ?? mockDevices[0];
-  const online = cur.online;
+  const cur = paired.find((d) => d.id === selId) ?? paired[0];
+  const online = !!cur?.reachable;
   const isRinging = ringing && online;
+  const transfers = allTransfers.filter((x) => x.deviceId === cur?.id);
+  const hasFinished = transfers.some((x) => x.state !== 'active');
+  const lost = !!cur && !cur.reachable && cur.lastSeen !== null && now - cur.lastSeen < LOST_WINDOW_MS;
+
+  const sc = {
+    clip: formatShortcut(settings.shortcuts.sendClip),
+    file: formatShortcut(settings.shortcuts.sendFile),
+    ring: formatShortcut(settings.shortcuts.findDev),
+  };
 
   useEffect(
     () => () => {
@@ -63,35 +81,38 @@ export function MainWindow() {
     timers.current.push(window.setTimeout(() => setToast((c) => (c === msg ? '' : c)), 2400));
   }, []);
 
-  // Sahte aktarım ilerlemesi (prototipteki gibi)
-  const hasActive = transfers.some((x) => x.p < 100);
-  useEffect(() => {
-    if (!hasActive) return;
-    const id = window.setInterval(() => {
-      setTransfers((l) => l.map((x) => (x.p >= 100 ? x : { ...x, p: Math.min(100, x.p + 3 + Math.floor(Math.random() * 8)) })));
-    }, 140);
-    return () => clearInterval(id);
-  }, [hasActive]);
+  // Depodan gelen kısa iletiler (eşleştirme reddedildi, dosya gönderildi…)
+  useEffect(() => onNotice((n) => showToast(t(n.key, n.params))), [showToast, t]);
 
+  // Tauri'de dosya bırakma pencere olayıyla gelir (yerel yollarla).
+  const dropTarget = useRef<string | null>(null);
   useEffect(() => {
-    for (const x of transfers) {
-      if (x.p >= 100 && !announced.current.has(x.id)) {
-        announced.current.add(x.id);
-        showToast(t('toast.fileSent', { name: x.name }));
-      }
-    }
-  }, [transfers, showToast, t]);
+    dropTarget.current = online && cur ? cur.id : null;
+  }, [online, cur]);
+  useEffect(() => {
+    const offs = [
+      onEvent<{ paths: string[] }>('tauri://drag-drop', (p) => {
+        setDrag(false);
+        if (dropTarget.current) void actions.sendFiles(dropTarget.current, p.paths);
+      }),
+      onEvent('tauri://drag-enter', () => setDrag(true)),
+      onEvent('tauri://drag-leave', () => setDrag(false)),
+    ];
+    return () => offs.forEach((off) => off());
+  }, []);
 
-  const addTransfers = (files: { name: string; bytes: number }[]) => {
-    const fresh: MockTransfer[] = files.map((f) => ({ id: nextId.current++, name: f.name, bytes: f.bytes, dir: 'out', p: 0, when: 'now' }));
+  const closeMenu = () => setMenu(false);
+  const go = (v: View) => {
+    setView(v);
     setMenu(false);
-    setTransfers((l) => fresh.concat(l).slice(0, 6));
+    setRinging(false);
   };
 
-  const ping = () => {
+  const ring = () => {
     setMenu(false);
-    if (!online) return;
+    if (!cur || !online) return;
     clearTimeout(ringTimer.current);
+    void actions.ringDevice(cur.id);
     if (ringing) {
       setRinging(false);
       return;
@@ -101,98 +122,148 @@ export function MainWindow() {
   };
   const sendClip = () => {
     setMenu(false);
-    if (online) showToast(t('toast.clipboardSent', { device: cur.name }));
+    if (!cur || !online) return;
+    void actions.sendClipboard(cur.id);
+    showToast(t('toast.clipboardSent', { device: cur.name }));
   };
   const sendFile = () => {
-    if (!online) {
-      setMenu(false);
-      return;
-    }
-    const k = Math.floor(Math.random() * pickNames.length);
-    addTransfers([{ name: pickNames[k], bytes: pickBytes[k] }]);
+    setMenu(false);
+    if (cur && online) void actions.pickAndSend(cur.id);
   };
-
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDrag(false);
     const files = Array.from(e.dataTransfer?.files ?? []);
-    if (!online || files.length === 0) return;
-    addTransfers(files.slice(0, 4).map((f) => ({ name: f.name, bytes: f.size })));
+    if (!cur || !online || files.length === 0) return;
+    void actions.sendFiles(
+      cur.id,
+      files.slice(0, 6).map((f) => (f as File & { path?: string }).path ?? f.name),
+    );
+  };
+  const confirmUnpair = async () => {
+    const d = unpairTarget;
+    if (!d) return;
+    setUnpairTarget(null);
+    await actions.unpair(d.id);
+    setSelId(null);
+    setView('device');
+    showToast(t('toast.unpaired', { device: d.name }));
+  };
+  const finishOnboarding = () => {
+    setOnbReopen(false);
+    if (!settings.onboarded) void actions.updateSettings({ onboarded: true });
   };
 
-  const whenLabel = (w: string) => (w === 'now' ? t('transfers.now') : w === 'yesterday' ? t('transfers.yesterday') : w);
-  const seen = t('device.hoursAgo', { n: cur.seenHours });
-  const battColor = cur.battery <= 15 ? 'var(--red)' : 'var(--green)';
-  const title = view === 'settings' ? t('settings.title') : cur.name;
-  const subtitle = view === 'settings' ? '' : online ? t('device.connectedBattery', { battery: cur.battery }) : t('device.notConnected');
+  const seen = seenAgo(t, cur?.lastSeen ?? null);
+  const battery = cur?.battery ?? null;
+  const battColor = battery && battery.charge <= 15 ? 'var(--red)' : 'var(--green)';
+  const tabTitle: Record<SettingsTab, string> = {
+    general: t('settings.title'),
+    device: t('settings.titleDevice'),
+    shortcuts: t('settings.tabShortcuts'),
+    about: t('settings.tabAbout'),
+  };
+  const title = view === 'settings' ? tabTitle[tab] : view === 'troubleshoot' ? t('troubleshoot.title') : (cur?.name ?? t('app.name'));
+  const subtitle =
+    view !== 'device' || !cur
+      ? ''
+      : online
+        ? battery
+          ? t('device.connectedBattery', { battery: battery.charge })
+          : t('device.wifi')
+        : t('device.notConnected');
+  const showTools = view === 'device' && !!cur;
+  const deviceKind = (d: Device) => t(d.type === 'phone' ? 'device.phone' : 'device.tablet');
+
+  if (ready && (!settings.onboarded || onbReopen)) {
+    return <Onboarding startAt={onbReopen ? 'search' : 'steps'} onFinish={finishOnboarding} />;
+  }
 
   return (
     <div className="app">
       <aside className={`glass sbar sidebar${isMac ? ' mac' : ''}`}>
         {isMac && <div className="drag-top" data-tauri-drag-region />}
-        <div className="side-label">{t('sidebar.myDevices')}</div>
-        {mockDevices.map((d) => {
-          const selected = view === 'device' && d.id === sel;
-          return (
-            <button
-              key={d.id}
-              type="button"
-              className="hov dev-row"
-              data-sel={selected ? '1' : '0'}
-              aria-current={selected ? 'true' : undefined}
-              onClick={() => {
-                setSel(d.id);
-                setView('device');
-                setMenu(false);
-                setRinging(false);
-              }}
-            >
-              <span className="dev-icon">{d.kind === 'tablet' ? <TabletIcon /> : <PhoneIcon />}</span>
-              <span className="dev-text">
-                <span className="dev-name">{d.name}</span>
-                <span className="dev-status">
-                  <span className="dot" style={{ background: d.online ? 'var(--green)' : 'var(--off)' }} />
-                  {d.online ? t('device.connectedBattery', { battery: d.battery }) : t('device.notConnected')}
-                </span>
+        {view === 'settings' ? (
+          <SettingsNav tab={tab} onTab={setTab} onBack={() => go('device')} deviceName={cur?.name ?? null} />
+        ) : (
+          <>
+            <div className="side-label">{t('sidebar.myDevices')}</div>
+            {paired.map((d) => {
+              const selected = view === 'device' && d.id === cur?.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  className="hov dev-row"
+                  data-sel={selected ? '1' : '0'}
+                  aria-current={selected ? 'true' : undefined}
+                  onClick={() => {
+                    setSelId(d.id);
+                    go('device');
+                  }}
+                >
+                  <span className="dev-icon">
+                    <DeviceIcon type={d.type} />
+                  </span>
+                  <span className="dev-text">
+                    <span className="dev-name">{d.name}</span>
+                    <span className="dev-status">
+                      <span className="dot" style={{ background: d.reachable ? 'var(--green)' : 'var(--off)' }} />
+                      {d.reachable && d.battery
+                        ? t('device.connectedBattery', { battery: d.battery.charge })
+                        : d.reachable
+                          ? t('device.wifi')
+                          : t('device.notConnected')}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+
+            <div className="side-label row">
+              <span>{t('sidebar.nearby')}</span>
+              <SpinnerIcon size={12} style={{ animation: 'spin 1.1s linear infinite' }} />
+            </div>
+            {nearby.map((d) => {
+              const requested = pairing?.deviceId === d.id && pairing.state === 'requestedByUs';
+              return (
+                <div className="nearby-row" key={d.id}>
+                  <span className="dev-icon">
+                    <DeviceIcon type={d.type} />
+                  </span>
+                  <span className="dev-text" style={{ flex: 1 }}>
+                    <span className="dev-name">{d.name}</span>
+                    <span className="dev-sub">{t(requested ? 'pairing.statusRequested' : 'pairing.statusUnpaired')}</span>
+                  </span>
+                  <button type="button" className="btn btn-base pri" disabled={requested} onClick={() => void actions.requestPair(d.id)}>
+                    {t('sidebar.pair')}
+                  </button>
+                </div>
+              );
+            })}
+
+            <div style={{ flex: 1, minHeight: 24 }} />
+            <div className="side-foot">
+              <span className="who">
+                <span style={{ fontSize: 11, color: 'var(--text2)' }}>{t('sidebar.thisComputer')}</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{settings.deviceName}</span>
               </span>
-            </button>
-          );
-        })}
-
-        <div className="side-label row">
-          <span>{t('sidebar.nearby')}</span>
-          <SpinnerIcon size={12} style={{ animation: 'spin 1.1s linear infinite' }} />
-        </div>
-        <div className="nearby-row">
-          <span className="dev-icon">
-            <PhoneIcon />
-          </span>
-          <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Pixel 8</span>
-          <button type="button" className="btn btn-base pri">
-            {t('sidebar.pair')}
-          </button>
-        </div>
-
-        <div style={{ flex: 1, minHeight: 24 }} />
-        <div className="side-foot">
-          <span className="who">
-            <span style={{ fontSize: 11, color: 'var(--text2)' }}>{t('sidebar.thisComputer')}</span>
-            <span style={{ fontSize: 12, fontWeight: 600 }}>MacBook Pro</span>
-          </span>
-          <button
-            type="button"
-            aria-label={t('sidebar.settings')}
-            aria-pressed={view === 'settings'}
-            className="hov round-btn"
-            data-sel={view === 'settings' ? '1' : '0'}
-            onClick={() => {
-              setView((v) => (v === 'settings' ? 'device' : 'settings'));
-              setMenu(false);
-            }}
-          >
-            <SlidersIcon />
-          </button>
-        </div>
+              <button
+                type="button"
+                aria-label={t('sidebar.settings')}
+                aria-pressed={false}
+                className="hov round-btn"
+                data-sel="0"
+                onClick={() => {
+                  setTab('general');
+                  go('settings');
+                }}
+              >
+                <SlidersIcon />
+              </button>
+            </div>
+          </>
+        )}
       </aside>
 
       <main className="main">
@@ -202,9 +273,9 @@ export function MainWindow() {
             <span className="t1">{title}</span>
             {subtitle && <span className="t2">{subtitle}</span>}
           </div>
-          {view === 'device' && (
+          {showTools && (
             <div className="glass capsule">
-              <button type="button" className="tbb" aria-label={t('toolbar.findDevice')} onClick={ping}>
+              <button type="button" className="tbb" aria-label={t('toolbar.findDevice')} onClick={ring}>
                 <PingIcon strokeWidth={1.7} />
               </button>
               <button type="button" className="tbb" aria-label={t('toolbar.sendClipboard')} onClick={sendClip}>
@@ -224,9 +295,18 @@ export function MainWindow() {
           )}
         </div>
 
-        {view === 'settings' ? (
-          <SettingsPane clipOn={clipOn} />
-        ) : (
+        {view === 'settings' && (
+          <SettingsPane tab={tab} device={cur} onUnpair={setUnpairTarget} onTroubleshoot={() => go('troubleshoot')} />
+        )}
+        {view === 'troubleshoot' && <Troubleshoot />}
+
+        {view === 'device' && !cur && (
+          <div className="scroll">
+            <NoDevices onSearch={() => setOnbReopen(true)} onTroubleshoot={() => go('troubleshoot')} />
+          </div>
+        )}
+
+        {view === 'device' && cur && (
           <div className="scroll">
             {online ? (
               <div className="hero" key={`on-${cur.id}`}>
@@ -237,57 +317,42 @@ export function MainWindow() {
                       <span className="pulse-ring" style={{ animationDelay: '.55s' }} />
                     </>
                   )}
-                  <svg
-                    role="img"
-                    aria-label={t('device.tablet')}
-                    viewBox="0 0 140 100"
-                    width="140"
-                    height="100"
+                  <DeviceArt
+                    type={cur.type}
+                    label={deviceKind(cur)}
                     style={{ position: 'relative', animation: isRinging ? 'wiggle .55s ease-in-out infinite' : 'none' }}
-                  >
-                    <rect x="4" y="6" width="132" height="88" rx="12" style={{ fill: 'var(--devFrame)' }} />
-                    <rect x="10" y="12" width="120" height="76" rx="7" style={{ fill: 'var(--devScreen)' }} />
-                    <path
-                      d="M10 70 Q50 56 90 64 T130 60 V81 a7 7 0 0 1 -7 7 H17 a7 7 0 0 1 -7 -7 Z"
-                      style={{ fill: 'var(--accent)', opacity: 0.35 }}
-                    />
-                    <circle cx="102" cy="34" r="9" style={{ fill: 'var(--accent)', opacity: 0.5 }} />
-                  </svg>
+                  />
                 </div>
                 <div className="info">
                   <span className="name">{cur.name}</span>
                   <span className="line">
                     <span className="dot" style={{ width: 7, height: 7, background: 'var(--green)' }} />
-                    {t('device.connectedLine', { net: t('device.wifi'), ip: cur.ip })}
+                    {t('device.connectedLine', { net: t('device.wifi'), ip: cur.ip ?? '' })}
                   </span>
                   {isRinging && <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{t('device.ringing')}</span>}
                 </div>
-                <div className="batt">
-                  <span className="pct">%{cur.battery}</span>
-                  <span className="bar-batt">
-                    <span style={{ width: `${cur.battery}%`, background: battColor }} />
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text2)' }}>
-                    <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                      <path d="M13 2 5 14h6l-1 8 8-12h-6z" />
-                    </svg>
-                    {t('device.charging')}
-                  </span>
-                </div>
+                {battery && (
+                  <div className="batt">
+                    <span className="pct">%{battery.charge}</span>
+                    <span className="bar-batt">
+                      <span style={{ width: `${battery.charge}%`, background: battColor }} />
+                    </span>
+                    {battery.charging && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--text2)' }}>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                          <path d="M13 2 5 14h6l-1 8 8-12h-6z" />
+                        </svg>
+                        {t('device.charging')}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
+            ) : lost ? (
+              <ConnectionLost device={cur} onTroubleshoot={() => go('troubleshoot')} />
             ) : (
               <div className="hero" key={`off-${cur.id}`}>
-                <svg
-                  role="img"
-                  aria-label={t('device.phone')}
-                  viewBox="0 0 140 100"
-                  width="140"
-                  height="100"
-                  style={{ opacity: 0.5, flex: 'none' }}
-                >
-                  <rect x="44" y="2" width="52" height="96" rx="11" style={{ fill: 'var(--devFrame)' }} />
-                  <rect x="49" y="7" width="42" height="86" rx="7" style={{ fill: 'var(--devScreen)' }} />
-                </svg>
+                <DeviceArt type={cur.type} label={deviceKind(cur)} dim live={false} />
                 <div className="info">
                   <span className="name">{cur.name}</span>
                   <span className="line">
@@ -296,19 +361,21 @@ export function MainWindow() {
                   </span>
                   <span style={{ fontSize: 13, color: 'var(--text2)', maxWidth: 420 }}>{t('device.autoReconnect')}</span>
                 </div>
-                <div className="batt" style={{ gap: 4 }}>
-                  <span className="pct" style={{ color: 'var(--text2)' }}>
-                    %{cur.battery}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('device.lastKnown')}</span>
-                </div>
+                {battery && (
+                  <div className="batt" style={{ gap: 4 }}>
+                    <span className="pct" style={{ color: 'var(--text2)' }}>
+                      %{battery.charge}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('device.lastKnown')}</span>
+                  </div>
+                )}
               </div>
             )}
 
             <section>
               <h2 className="h2">{t('actions.heading')}</h2>
-              <div className="tiles" style={{ opacity: online ? 1 : 0.4 }}>
-                <button type="button" className="tile" onClick={ping}>
+              <div className="tiles" style={{ opacity: online ? 1 : 0.4 }} aria-disabled={!online}>
+                <button type="button" className="tile" onClick={ring} disabled={!online}>
                   <span className={`ico${isRinging ? ' on' : ''}`}>
                     <PingIcon size={20} style={{ animation: isRinging ? 'wiggle .55s ease-in-out infinite' : 'none' }} />
                   </span>
@@ -317,22 +384,22 @@ export function MainWindow() {
                     <span>{isRinging ? t('device.ringing') : t('actions.findDeviceSub')}</span>
                   </span>
                 </button>
-                <button type="button" className="tile" onClick={sendClip}>
+                <button type="button" className="tile" onClick={sendClip} disabled={!online}>
                   <span className="ico">
                     <ClipboardIcon size={20} />
                   </span>
                   <span className="txt">
                     <b>{t('actions.sendClipboard')}</b>
-                    <span>{SHORTCUT.clip}</span>
+                    <span>{sc.clip}</span>
                   </span>
                 </button>
-                <button type="button" className="tile" onClick={sendFile}>
+                <button type="button" className="tile" onClick={sendFile} disabled={!online}>
                   <span className="ico">
                     <FileUploadIcon size={20} />
                   </span>
                   <span className="txt">
                     <b>{t('actions.sendFile')}</b>
-                    <span>{SHORTCUT.file}</span>
+                    <span>{sc.file}</span>
                   </span>
                 </button>
               </div>
@@ -349,7 +416,11 @@ export function MainWindow() {
                     <b>{t('sync.clipboard')}</b>
                     <span>{t('sync.clipboardSub')}</span>
                   </span>
-                  <Switch checked={clipOn} onChange={setClipOn} label={t('sync.clipboard')} />
+                  <Switch
+                    checked={settings.clipboardMode !== 'off'}
+                    onChange={(v) => void actions.updateSettings({ clipboardMode: v ? 'auto' : 'off' })}
+                    label={t('sync.clipboard')}
+                  />
                 </div>
                 <div className="rule" />
                 <div className="srow">
@@ -360,7 +431,11 @@ export function MainWindow() {
                     <b>{t('sync.muteOnCall')}</b>
                     <span>{t('sync.muteOnCallSub')}</span>
                   </span>
-                  <Switch checked={muteOn} onChange={setMuteOn} label={t('sync.muteOnCall')} />
+                  <Switch
+                    checked={settings.muteOnCall}
+                    onChange={(v) => void actions.updateSettings({ muteOnCall: v })}
+                    label={t('sync.muteOnCall')}
+                  />
                 </div>
               </div>
             </section>
@@ -371,7 +446,8 @@ export function MainWindow() {
                 <button
                   type="button"
                   className="btn btn-base glass sm btn-glass"
-                  onClick={() => setTransfers((l) => l.filter((x) => x.p < 100))}
+                  disabled={!hasFinished}
+                  onClick={() => void actions.clearFinished(cur.id)}
                 >
                   {t('transfers.clearDone')}
                 </button>
@@ -387,39 +463,13 @@ export function MainWindow() {
               >
                 <DropIcon />
                 <span>{drag ? t('transfers.dropRelease') : t('transfers.dropHint')}</span>
-                <button type="button" className="btn btn-base pri" onClick={sendFile}>
+                <button type="button" className="btn btn-base pri" disabled={!online} onClick={sendFile}>
                   {t('transfers.chooseFile')}
                 </button>
               </div>
               <div className="card">
                 {transfers.map((x) => (
-                  <div className="trow" key={x.id}>
-                    <span className="tico">{x.dir === 'out' ? <ArrowUpIcon size={17} /> : <ArrowDownIcon size={17} />}</span>
-                    <div className="tbody">
-                      <span className="tname">{x.name}</span>
-                      {x.p < 100 ? (
-                        <span className="prog">
-                          <span className="bar">
-                            <span style={{ width: `${x.p}%` }} />
-                          </span>
-                          <span className="pt">%{x.p}</span>
-                        </span>
-                      ) : (
-                        <span className="meta">
-                          {formatSize(x.bytes)} · {x.dir === 'out' ? t('transfers.sent') : t('transfers.received')} · {whenLabel(x.when)}
-                        </span>
-                      )}
-                    </div>
-                    {x.p >= 100 && (
-                      <button
-                        type="button"
-                        className="hov round-btn"
-                        aria-label={t(isMac ? 'transfers.showInFolder' : 'transfers.showInFolderWin')}
-                      >
-                        <SearchIcon size={17} />
-                      </button>
-                    )}
-                  </div>
+                  <TransferRow key={x.id} x={x} />
                 ))}
                 {transfers.length === 0 && <div className="empty">{t('transfers.none')}</div>}
               </div>
@@ -427,21 +477,21 @@ export function MainWindow() {
           </div>
         )}
 
-        {menu && view === 'device' && (
+        {menu && showTools && (
           <>
-            <button type="button" className="scrim" aria-label={t('toolbar.closeMenu')} onClick={() => setMenu(false)} />
-            <div role="menu" className="glass-strong menu" onKeyDown={(e) => e.key === 'Escape' && setMenu(false)}>
+            <button type="button" className="scrim" aria-label={t('toolbar.closeMenu')} onClick={closeMenu} />
+            <div role="menu" className="glass-strong menu" onKeyDown={(e) => e.key === 'Escape' && closeMenu()}>
               <button type="button" role="menuitem" className="mi" onClick={sendClip}>
                 <span>{t('actions.sendClipboard')}</span>
-                <span className="sc">{SHORTCUT.clip}</span>
+                <span className="sc">{sc.clip}</span>
               </button>
               <button type="button" role="menuitem" className="mi" onClick={sendFile}>
                 <span>{t('actions.sendFile')}</span>
-                <span className="sc">{SHORTCUT.file}</span>
+                <span className="sc">{sc.file}</span>
               </button>
-              <button type="button" role="menuitem" className="mi" onClick={ping}>
+              <button type="button" role="menuitem" className="mi" onClick={ring}>
                 <span>{t('menu.findDevice')}</span>
-                <span className="sc">{SHORTCUT.ring}</span>
+                <span className="sc">{sc.ring}</span>
               </button>
               <div className="menu-sep" />
               <button
@@ -449,11 +499,14 @@ export function MainWindow() {
                 role="menuitem"
                 className="mi"
                 onClick={() => {
-                  setMenu(false);
-                  setView('settings');
+                  setTab('device');
+                  go('settings');
                 }}
               >
                 {t('menu.deviceSettings')}
+              </button>
+              <button type="button" role="menuitem" className="mi" onClick={() => go('troubleshoot')}>
+                {t('menu.troubleshoot')}
               </button>
               <button
                 type="button"
@@ -461,7 +514,7 @@ export function MainWindow() {
                 className="mi danger"
                 onClick={() => {
                   setMenu(false);
-                  showToast(t('toast.unpairConfirm'));
+                  setUnpairTarget(cur ?? null);
                 }}
               >
                 {t('menu.unpair')}
@@ -472,6 +525,9 @@ export function MainWindow() {
 
         <Toast message={toast} />
       </main>
+
+      <PairingSheet />
+      {unpairTarget && <UnpairDialog device={unpairTarget} onConfirm={() => void confirmUnpair()} onCancel={() => setUnpairTarget(null)} />}
     </div>
   );
 }
