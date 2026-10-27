@@ -1,0 +1,152 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Kontrol (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Tür denetimi (typecheck)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Biçim denetimi (format:check)
+        run: npm run format:check
+
+      - name: Frontend derlemesi (Tauri build script için dist gerekir)
+        run: npm run build
+
+      - name: cargo fmt
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test
+
+  build:
+    name: Derle (${{ matrix.name }})
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest
+            artifact: Tatar-macos
+          - name: Windows
+            os: windows-latest
+            artifact: Tatar-windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust (macOS evrensel ikili için her iki hedef)
+        if: runner.os == 'macOS'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust (Windows)
+        if: runner.os == 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: npm ci
+        run: npm ci
+
+      - name: Windows - frontend derlemesi
+        if: runner.os == 'Windows'
+        run: npm run build
+
+      - name: Windows - cargo clippy
+        if: runner.os == 'Windows'
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Windows - cargo test
+        if: runner.os == 'Windows'
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Tauri derle (macOS evrensel)
+        if: runner.os == 'macOS'
+        run: npx tauri build --target universal-apple-darwin --bundles app,dmg
+
+      - name: Tauri derle (Windows)
+        if: runner.os == 'Windows'
+        run: npx tauri build --bundles msi,nsis
+
+      - name: macOS - .app dosyasını ziple
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p staging
+          ditto -c -k --sequesterRsrc --keepParent \
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/Tatar.app \
+            staging/Tatar.app.zip
+          cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg staging/
+
+      - name: Upload - macOS
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tatar-macos
+          path: staging/*
+          if-no-files-found: error
+
+      - name: Upload - Windows
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tatar-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
