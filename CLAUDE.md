@@ -244,6 +244,6 @@ Animasyon ayarları, erişilebilirlik denetimi, performans (boştayken CPU ≈ 0
 
 ## 10. Açık kararlar (proje sahibine sorulacak)
 - [ ] **Lisans:** Açık kaynak paylaşılacaksa MIT/Apache-2.0 (serbest) veya GPL-3.0 (KDE ekosistemiyle uyumlu). Aşama 9'dan önce karar verilecek.
-- [ ] **Uygulama kimliği** (ör. `io.github.<kullanıcı-adı>.tatar`) ve GitHub kullanıcı adı. Aşama 0'da sorulacak.
+- [x] **Uygulama kimliği:** `io.github.augustus29.tatar`, GitHub kullanıcı adı `Augustus29` (depo: gizli, github.com/Augustus29/tatar).
 - [ ] **Apple Developer üyeliği** (imzalama/notarization, yıllık ücretli): Herkese dağıtım istenirse gerekli. Şimdilik yok.
 - [ ] **macOS 27'ye uyarlama:** Liquid Glass, macOS 27'de kenar çubuğunu pencere kenarına yaslayan rötuşlar aldı. Tasarım şu an yüzen kenar çubuğu üzerine kurulu, değişiklik istenirse küçük bir iş.
