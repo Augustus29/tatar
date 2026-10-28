@@ -41,6 +41,9 @@ const BACKOFF_BASE: Duration = Duration::from_secs(2);
 const BACKOFF_MAX: Duration = Duration::from_secs(60);
 
 /// `fails` ardışık hatadan sonraki bekleme süresi (üstel, en çok 60 sn).
+/// Bu süre içinde kurulan ikinci bağlantı "eşzamanlı çift bağlantı" sayılır.
+const SIMULTANEOUS_WINDOW: Duration = Duration::from_secs(5);
+
 fn backoff_delay(fails: u32) -> Duration {
     let mult = 1u32 << fails.saturating_sub(1).min(10);
     (BACKOFF_BASE * mult).min(BACKOFF_MAX)
@@ -411,6 +414,8 @@ struct Live {
     remote: SocketAddr,
     /// Eşin doğrulanmış TCP dinleme portu (biliniyorsa).
     listen_port: Option<u16>,
+    /// Bağlantıyı biz açtık mı?
+    outgoing: bool,
     since: Instant,
 }
 
@@ -1033,7 +1038,20 @@ impl Core {
                     short(&id)
                 );
             }
-            Some(_) => {}
+            Some(old) => {
+                // İki Tatar birbirini aynı anda bulunca ikisi de bağlanır; her taraf "yeni gelen
+                // kazanır" derse birbirlerinin bağlantısını kapatırlar. Taze çift bağlantıda iki
+                // tarafın aynı kararı vermesi için kimliği KÜÇÜK olanın açtığı bağlantı kalır.
+                let fresh = old.since.elapsed() < SIMULTANEOUS_WINDOW;
+                let preferred = |outgoing: bool| outgoing == (self.local.device_id < id);
+                if fresh && preferred(old.outgoing) && !preferred(est.outgoing) {
+                    log::info!(
+                        "eşzamanlı çift bağlantı: mevcut korundu, yenisi kapatıldı: {}",
+                        short(&id)
+                    );
+                    return;
+                }
+            }
             None => {
                 if !trusted {
                     match admit_unpaired(
@@ -1059,6 +1077,7 @@ impl Core {
         let cert = est.cert_der.clone();
         let remote = est.addr;
         let listen_port = est.listen_port;
+        let outgoing = est.outgoing;
         let ip = remote_ip;
 
         let dev = self.devs.entry(id.clone()).or_insert_with(|| Dev {
@@ -1109,6 +1128,7 @@ impl Core {
             dropped: 0,
             remote,
             listen_port,
+            outgoing,
             since: Instant::now(),
         });
         let paired = dev.pair == PairState::Paired;

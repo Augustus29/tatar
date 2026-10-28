@@ -57,6 +57,8 @@ pub struct Established {
     /// Eşin TCP dinleme portu: giden bağlantıda bağlandığımız port; gelende kimlikteki `tcpPort`
     /// (aralıkta ise). Gelen bağlantının kaynak portu geçicidir, bu yüzden kullanılmaz.
     pub listen_port: Option<u16>,
+    /// Bağlantıyı biz açtık mı (giden)? Çift yönlü eşzamanlı bağlantıda kazananı seçmek için.
+    pub outgoing: bool,
     pub reader: BufReader<ReadHalf<TlsIo>>,
     pub writer: WriteHalf<TlsIo>,
 }
@@ -161,6 +163,7 @@ async fn finish(
         cert_der,
         addr,
         listen_port,
+        outgoing,
         reader,
         writer: wr,
     })
