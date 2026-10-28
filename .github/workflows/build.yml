@@ -154,3 +154,31 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*-setup.exe
           if-no-files-found: error
+
+  release:
+    name: Sürüm sayfası
+    # Yalnızca v* etiketi gönderilince: iki derlemenin dosyalarıyla GitHub sürümü oluşturur.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-release
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Tatar ${{ github.ref_name }}
+          body_path: .github/release/${{ github.ref_name }}.md
+          # Windows dosyaları msi/ ve nsis/ alt klasörlerinde iner.
+          files: |
+            dist-release/**/*.dmg
+            dist-release/**/*.zip
+            dist-release/**/*.msi
+            dist-release/**/*-setup.exe
+          fail_on_unmatched_files: true
