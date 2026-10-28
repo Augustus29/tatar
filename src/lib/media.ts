@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { inTauri } from './platform';
 import { call, onEvent } from './tauri';
 
 /** Telefondaki bir oynatıcının durumu (Rust `MediaInfo`; sözleşme: plugins/mpris.rs). */
@@ -37,6 +38,28 @@ function setList(next: MediaInfo[]): void {
 function start(): void {
   if (started) return;
   started = true;
+  // Tarayıcıda (Tauri dışında) tasarım denetimi için sahte bir oynatıcı.
+  if (!inTauri) {
+    setList([
+      {
+        deviceId: 'tab',
+        player: 'Spotify',
+        players: ['Spotify'],
+        title: 'Uzun İnce Bir Yoldayım',
+        artist: 'Âşık Veysel',
+        album: '',
+        isPlaying: true,
+        length: 215000,
+        volume: 60,
+        canPlay: true,
+        canPause: true,
+        canNext: true,
+        canPrevious: true,
+        canSeek: true,
+      },
+    ]);
+    return;
+  }
   onEvent<MediaInfo[]>('media-changed', setList);
   void call<MediaInfo[]>('get_media').then((l) => l && setList(l));
 }

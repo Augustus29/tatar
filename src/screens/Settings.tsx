@@ -409,7 +409,7 @@ function CommandsSection() {
         <div className="setrow">
           <input
             className="field"
-            style={{ width: 130 }}
+            style={{ width: 130, textAlign: 'left' }}
             value={name}
             maxLength={64}
             placeholder={t('settings.commandName')}
@@ -418,7 +418,7 @@ function CommandsSection() {
           />
           <input
             className="field"
-            style={{ flex: 1, minWidth: 0, fontFamily: 'var(--mono)', fontSize: 12 }}
+            style={{ flex: 1, minWidth: 0, fontFamily: 'var(--mono)', fontSize: 12, textAlign: 'left' }}
             value={text}
             maxLength={1024}
             placeholder={t('settings.commandText')}
