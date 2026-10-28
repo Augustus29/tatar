@@ -3,6 +3,7 @@ name = "tatar"
 version = "0.1.0"
 description = "Tatar: KDE Connect uyumlu masaüstü istemcisi"
 authors = ["Tatar"]
+license = "GPL-3.0-only"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

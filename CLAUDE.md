@@ -82,7 +82,7 @@ Bir ayrıntıdan emin değilsen tahmin etme. Aşağıdaki kaynaklardan doğrula 
 - `kdeconnect-android` (Java): telefon tarafının gerçekte ne gönderdiği
 - Valent (C) ve GSConnect (JS): alternatif uygulamalar, okunması kolay
 - Lisans uyarısı: Bu projeler GPL lisanslı. **Kodlarını kopyalama**; davranışı oku, kendi kodunu yaz.
-  (Proje lisansı henüz seçilmedi, bkz. §10.)
+  (Proje lisansı GPL-3.0; yine de kod kopyalanmaz, davranış okunup yeniden yazılır.)
 
 ### Bilinen temel noktalar (yine de kaynaktan doğrula)
 - Güncel sürüm **protokol 8**. Mart 2025 sonrası KDE Connect sürümleri bunu kullanır. Eski sürümlerle uyumluluk v1'de hedef değil.
@@ -245,7 +245,7 @@ Animasyon ayarları, erişilebilirlik denetimi, performans (boştayken CPU ≈ 0
 ---
 
 ## 10. Açık kararlar (proje sahibine sorulacak)
-- [ ] **Lisans:** Açık kaynak paylaşılacaksa MIT/Apache-2.0 (serbest) veya GPL-3.0 (KDE ekosistemiyle uyumlu). Aşama 9'dan önce karar verilecek.
+- [x] **Lisans:** GPL-3.0 (`LICENSE`). Proje gönüllü açık kaynak.
 - [x] **Uygulama kimliği:** `io.github.augustus29.tatar`, GitHub kullanıcı adı `Augustus29` (depo: gizli, github.com/Augustus29/tatar).
 - [x] **Apple Developer üyeliği:** Alınmayacak (proje gönüllü açık kaynak, maddi beklenti yok). Uygulama imzasız dağıtılır; README'deki "sağ tık → Aç" ve Anahtar Zinciri talimatları geçerli.
 - [ ] **macOS 27'ye uyarlama:** Liquid Glass, macOS 27'de kenar çubuğunu pencere kenarına yaslayan rötuşlar aldı. Tasarım şu an yüzen kenar çubuğu üzerine kurulu, değişiklik istenirse küçük bir iş.

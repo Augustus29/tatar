@@ -120,4 +120,4 @@ Derleme ve testler her gönderimde GitHub Actions üzerinde de çalışır (`.gi
 
 ## Lisans
 
-Henüz karar verilmedi.
+Tatar, [GNU Genel Kamu Lisansı sürüm 3 (GPL-3.0)](LICENSE) ile dağıtılan özgür ve açık kaynak bir yazılımdır. Kodu kullanabilir, değiştirebilir ve paylaşabilirsiniz; değiştirilmiş sürümleri de aynı lisansla, kaynak koduyla birlikte paylaşmanız gerekir.

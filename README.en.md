@@ -120,4 +120,4 @@ The same checks and tests also run on GitHub Actions on every push and pull requ
 
 ## License
 
-Not yet decided.
+Tatar is free and open-source software licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE). You may use, modify and share it; modified versions must be shared under the same license, with their source code.
