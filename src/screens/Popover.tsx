@@ -19,6 +19,8 @@ import {
   TextIcon,
 } from '../components/icons';
 import { Switch } from '../components/Switch';
+import { MediaMini } from '../components/MediaCard';
+import { useMedia } from '../lib/media';
 
 const CIRC = 2 * Math.PI * 18;
 
@@ -30,6 +32,7 @@ export function Popover() {
   const mute = useStore((s) => s.settings.muteOnCall);
   const device = paired.find((d) => d.reachable) ?? paired[0];
   const online = !!device?.reachable;
+  const media = useMedia(device?.id);
   const [ringing, setRinging] = useState(false);
   const [clipSent, setClipSent] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -249,6 +252,8 @@ export function Popover() {
             <span className="lbl">{t('popover.file')}</span>
           </button>
         </div>
+
+        {online && media && <MediaMini m={media} />}
 
         <div className="sub-panel">
           <SpeakerOffIcon size={18} style={{ color: 'var(--text2)' }} strokeWidth={1.8} />

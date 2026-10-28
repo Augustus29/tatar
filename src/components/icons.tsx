@@ -222,3 +222,41 @@ export function RiderGlyph({ size = 20, color = 'currentColor' }: { size?: numbe
     </svg>
   );
 }
+
+export const MusicIcon = make(
+  <>
+    <path d="M9 18V6l10-2v12" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="16.5" cy="16" r="2.5" />
+  </>,
+  { strokeWidth: 1.8 },
+);
+export const PlayIcon = make(<path d="M8 5.5v13l11-6.5z" />, { strokeWidth: 1.8 });
+export const PauseIcon = make(
+  <>
+    <path d="M8.5 5.5v13" />
+    <path d="M15.5 5.5v13" />
+  </>,
+  { strokeWidth: 2.4 },
+);
+export const SkipNextIcon = make(
+  <>
+    <path d="M6 5.5v13l9-6.5z" />
+    <path d="M18.5 5.5v13" />
+  </>,
+  { strokeWidth: 1.8 },
+);
+export const SkipPreviousIcon = make(
+  <>
+    <path d="M18 5.5v13l-9-6.5z" />
+    <path d="M5.5 5.5v13" />
+  </>,
+  { strokeWidth: 1.8 },
+);
+export const SpeakerIcon = make(
+  <>
+    <path d="M11 5 6 9H3v6h3l5 4z" />
+    <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+  </>,
+  { strokeWidth: 1.8 },
+);

@@ -8,6 +8,8 @@
 	<array>
 		<string>_kdeconnect._udp</string>
 	</array>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Tatar controls Music and Spotify (play, pause, next) when your phone asks, and pauses music during calls.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

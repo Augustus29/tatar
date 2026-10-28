@@ -60,6 +60,20 @@
     "muteOnCall": "Arama gelince sesi kapat",
     "muteOnCallSub": "Telefon çaldığında bilgisayarın sesi kısılır, arama bitince geri açılır."
   },
+  "media": {
+    "heading": "Medya",
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "previous": "Önceki parça",
+    "next": "Sonraki parça",
+    "volume": "Ses",
+    "nothingPlaying": "Çalan bir şey yok",
+    "onDevice": "{device} üzerinde {player}",
+    "control": "Bu bilgisayardaki medyayı telefondan kontrol et",
+    "controlSub": "Telefonunuz Müzik ve Spotify'da (macOS) ya da herhangi bir medya uygulamasında (Windows) oynatabilir, duraklatabilir ve parça atlayabilir.",
+    "pauseOnCall": "Arama sırasında müziği duraklat",
+    "pauseOnCallSub": "Telefon çaldığında çalan müzik duraklatılır, arama bitince devam eder."
+  },
   "transfers": {
     "heading": "Aktarımlar",
     "clearDone": "Tamamlananları temizle",

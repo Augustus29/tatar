@@ -260,6 +260,24 @@ function DeviceTab({ device, onUnpair }: { device: Device | undefined; onUnpair:
         </div>
         <div className="setrow">
           <span className="stack">
+            <span>{t('media.pauseOnCall')}</span>
+            <span className="sub">{t('media.pauseOnCallSub')}</span>
+          </span>
+          <Switch
+            checked={s.pauseMediaOnCall}
+            onChange={(v) => void actions.updateSettings({ pauseMediaOnCall: v })}
+            label={t('media.pauseOnCall')}
+          />
+        </div>
+        <div className="setrow">
+          <span className="stack">
+            <span>{t('media.control')}</span>
+            <span className="sub">{t('media.controlSub')}</span>
+          </span>
+          <Switch checked={s.mediaControl} onChange={(v) => void actions.updateSettings({ mediaControl: v })} label={t('media.control')} />
+        </div>
+        <div className="setrow">
+          <span className="stack">
             <span>{t('settings.shareBattery')}</span>
             <span className="sub">{t('settings.shareBatterySub')}</span>
           </span>

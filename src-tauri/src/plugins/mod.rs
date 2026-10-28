@@ -16,7 +16,9 @@ use crate::protocol::packet::NetworkPacket;
 use crate::store::{Settings, SettingsStore};
 
 pub mod battery;
+pub mod callmedia;
 pub mod findmyphone;
+pub mod mpris;
 pub mod notification;
 pub mod notifier;
 pub mod ping;

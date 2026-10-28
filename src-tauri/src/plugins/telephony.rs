@@ -120,6 +120,8 @@ pub struct TelephonyPlugin<A: AudioBackend + 'static> {
     shared: Arc<Shared>,
     notifier: SharedNotifier,
     muter: Arc<CallMuter<A>>,
+    /// Arama gelince müziği duraklatan durum makinesi (yoksa özellik kapalı).
+    media: Option<Arc<super::callmedia::CallMedia>>,
 }
 
 impl<A: AudioBackend + 'static> TelephonyPlugin<A> {
@@ -128,7 +130,14 @@ impl<A: AudioBackend + 'static> TelephonyPlugin<A> {
             shared,
             notifier,
             muter: Arc::new(CallMuter::new(audio)),
+            media: None,
         }
+    }
+
+    /// Arama gelince çalan müziği duraklatma desteğini bağlar (ayar: `pauseMediaOnCall`).
+    pub fn with_media(mut self, media: Arc<super::callmedia::CallMedia>) -> Self {
+        self.media = Some(media);
+        self
     }
 }
 
@@ -149,6 +158,9 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
         match (packet.body_str("event"), cancel) {
             (Some("ringing"), false) => {
                 let settings = self.shared.settings();
+                if let (Some(m), true) = (&self.media, settings.pause_media_on_call) {
+                    m.ringing_async(&device.id);
+                }
                 if !settings.mute_on_call {
                     return;
                 }
@@ -182,9 +194,15 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
             // Cevaplandı: bekçi köpeği iptal olur, ses görüşme bitene dek kapalı kalır.
             (Some("talking"), false) => {
                 self.muter.touch(&device.id);
+                if let Some(m) = &self.media {
+                    m.touch(&device.id);
+                }
             }
             (Some("ringing" | "talking"), true) | (Some("missedCall"), false) => {
                 self.muter.ended(&device.id);
+                if let Some(m) = &self.media {
+                    m.ended_async(&device.id);
+                }
             }
             _ => {}
         }
@@ -192,6 +210,9 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
 
     fn device_disconnected(&self, device_id: &str) {
         self.muter.ended(device_id);
+        if let Some(m) = &self.media {
+            m.ended_async(device_id);
+        }
     }
 }
 
@@ -324,6 +345,75 @@ mod tests {
         let m = CallMuter::new(a.clone());
         assert_eq!(m.ringing("p", false), None);
         assert!(!m.ended("p"));
+    }
+
+    #[test]
+    fn plugin_pauses_and_resumes_media_around_call() {
+        use crate::platform::media::{MediaAction, MediaBackend, PlayerState};
+        use crate::plugins::notifier::Notifier;
+        use serde_json::json;
+        use tokio::sync::mpsc;
+
+        struct Quiet;
+        impl Notifier for Quiet {
+            fn notify(&self, _t: &str, _b: &str) {}
+        }
+        struct Player(Mutex<bool>);
+        impl MediaBackend for Arc<Player> {
+            fn players(&self) -> Vec<String> {
+                vec!["Music".into()]
+            }
+            fn state(&self, _: &str) -> Option<PlayerState> {
+                Some(PlayerState {
+                    is_playing: *self.0.lock().unwrap(),
+                    ..Default::default()
+                })
+            }
+            fn action(&self, _: &str, a: MediaAction) -> bool {
+                *self.0.lock().unwrap() = a == MediaAction::Play;
+                true
+            }
+            fn set_volume(&self, _: &str, _: i32) -> bool {
+                false
+            }
+            fn set_position(&self, _: &str, _: i64) -> bool {
+                false
+            }
+        }
+        let player = Arc::new(Player(Mutex::new(true)));
+        let media = crate::plugins::callmedia::CallMedia::new(Arc::new(player.clone()));
+        let a = FakeAudio::new(false, 0.9);
+        let p =
+            TelephonyPlugin::new(Arc::new(Shared::default()), Arc::new(Quiet), a).with_media(media);
+        let (tx, _rx) = mpsc::channel(1);
+        let dev = DeviceHandle {
+            id: "ph".into(),
+            name: "Phone".into(),
+            peer_incoming: Arc::new(vec![]),
+            tx,
+            peer_ip: None,
+            peer_cert: Arc::new(Vec::new()),
+        };
+        let pk = |body| NetworkPacket::new(TYPE_TELEPHONY, body);
+        let wait = |want: bool| {
+            let start = std::time::Instant::now();
+            while *player.0.lock().unwrap() != want {
+                assert!(
+                    start.elapsed() < Duration::from_secs(3),
+                    "medya durumu değişmedi"
+                );
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+        p.handle(&dev, &pk(json!({"event": "ringing"})));
+        wait(false);
+        p.handle(&dev, &pk(json!({"event": "ringing", "isCancel": "true"})));
+        wait(true);
+        // Bağlantı kopunca da sürdürülür.
+        p.handle(&dev, &pk(json!({"event": "ringing"})));
+        wait(false);
+        p.device_disconnected("ph");
+        wait(true);
     }
 
     #[test]

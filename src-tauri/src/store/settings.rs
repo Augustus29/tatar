@@ -88,6 +88,10 @@ pub struct Settings {
     pub notification_hide_content: bool,
     /// Telefondan çalıştırılabilen komutlar (varsayılan boş).
     pub commands: Vec<RunCommand>,
+    /// Telefon bu bilgisayardaki medyayı denetleyebilsin (`mpris`).
+    pub media_control: bool,
+    /// Arama gelince çalan müziği duraklat, arama bitince sürdür.
+    pub pause_media_on_call: bool,
 }
 
 pub fn default_shortcuts() -> BTreeMap<String, Vec<String>> {
@@ -122,6 +126,8 @@ impl Default for Settings {
             notification_mirror: true,
             notification_hide_content: false,
             commands: Vec::new(),
+            media_control: true,
+            pause_media_on_call: true,
         }
     }
 }
@@ -146,6 +152,8 @@ pub struct SettingsPatch {
     pub notification_mirror: Option<bool>,
     pub notification_hide_content: Option<bool>,
     pub commands: Option<Vec<RunCommand>>,
+    pub media_control: Option<bool>,
+    pub pause_media_on_call: Option<bool>,
 }
 
 fn one_of(v: &str, allowed: &[&str]) -> bool {
@@ -206,7 +214,9 @@ impl Settings {
             onboarded,
             notification_mirror,
             notification_hide_content,
-            commands
+            commands,
+            media_control,
+            pause_media_on_call
         );
         *self = std::mem::take(self).sanitized();
     }

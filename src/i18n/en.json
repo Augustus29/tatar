@@ -60,6 +60,20 @@
     "muteOnCall": "Mute on incoming call",
     "muteOnCallSub": "When your phone rings, this computer’s sound is muted and restored when the call ends."
   },
+  "media": {
+    "heading": "Media",
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous track",
+    "next": "Next track",
+    "volume": "Volume",
+    "nothingPlaying": "Nothing playing",
+    "onDevice": "{player} on {device}",
+    "control": "Control media on this computer from your phone",
+    "controlSub": "Your phone can play, pause and skip tracks in Music and Spotify (macOS) or any media app (Windows).",
+    "pauseOnCall": "Pause music during calls",
+    "pauseOnCallSub": "When your phone rings, playing music is paused and resumed when the call ends."
+  },
   "transfers": {
     "heading": "Transfers",
     "clearDone": "Clear completed",

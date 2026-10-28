@@ -11,6 +11,8 @@ import { Toast } from '../components/Toast';
 import { WindowControls } from '../components/WindowControls';
 import { DeviceArt } from '../components/DeviceArt';
 import { TransferRow } from '../components/TransferRow';
+import { MediaCard } from '../components/MediaCard';
+import { useMedia } from '../lib/media';
 import {
   ClipboardIcon,
   ClipboardPlainIcon,
@@ -58,6 +60,7 @@ export function MainWindow() {
 
   const cur = paired.find((d) => d.id === selId) ?? paired[0];
   const online = !!cur?.reachable;
+  const media = useMedia(cur?.id);
   const isRinging = ringing && online;
   const transfers = allTransfers.filter((x) => x.deviceId === cur?.id);
   const hasFinished = transfers.some((x) => x.state !== 'active');
@@ -442,6 +445,13 @@ export function MainWindow() {
                 </button>
               </div>
             </section>
+
+            {online && media && (
+              <section>
+                <h2 className="h2">{t('media.heading')}</h2>
+                <MediaCard m={media} />
+              </section>
+            )}
 
             <section>
               <h2 className="h2">{t('sync.heading')}</h2>

@@ -567,11 +567,22 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     ));
     registry.register(runcommand.clone());
     app.manage(runcommand);
-    registry.register(Arc::new(plugins::telephony::TelephonyPlugin::new(
+    let media_backend: Arc<dyn platform::media::MediaBackend> =
+        Arc::new(platform::media::SystemMedia);
+    registry.register(Arc::new(
+        plugins::telephony::TelephonyPlugin::new(
+            shared.clone(),
+            notifier,
+            platform::audio::SystemAudio,
+        )
+        .with_media(plugins::callmedia::CallMedia::new(media_backend.clone())),
+    ));
+    let mpris = plugins::mpris::MprisPlugin::new(
         shared,
-        notifier,
-        platform::audio::SystemAudio,
-    )));
+        Arc::new(TauriSink(app.clone())),
+        plugins::mpris::LocalMedia::new(media_backend),
+    );
+    registry.register(mpris.clone());
     let clipboard = plugins::clipboard::ClipboardPlugin::new(Arc::new(TauriSink(app.clone())));
     registry.register(Arc::new(plugins::clipboard::ClipboardPluginHandle(
         clipboard.clone(),
@@ -644,6 +655,7 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     });
     app.manage(share);
     app.manage(clipboard);
+    app.manage(mpris);
     app.manage(handle);
     Ok(())
 }
@@ -690,6 +702,9 @@ pub fn run() {
             plugins::clipboard::get_clipboard_history,
             plugins::clipboard::clear_clipboard_history,
             plugins::clipboard::send_clipboard,
+            plugins::mpris::get_media,
+            plugins::mpris::media_action,
+            plugins::mpris::media_set_volume,
             shortcuts::set_shortcut,
             send_files,
             list_transfers,
