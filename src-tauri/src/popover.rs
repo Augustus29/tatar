@@ -1,6 +1,7 @@
 //! Menü çubuğu / tepsi simgesi ve popover penceresi.
 
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 #[cfg(windows)]
 use tauri::menu::{Menu, MenuItem};
@@ -17,6 +18,41 @@ pub const POPOVER_LABEL: &str = "popover";
 const POPOVER_WIDTH: f64 = 340.0;
 const POPOVER_INITIAL_HEIGHT: f64 = 520.0;
 const POPOVER_GAP: f64 = 6.0;
+
+/// Dosya/klasör seçici açıkken popover odağı kaybetse de gizlenmez: gizlenirse uygulama
+/// arka plana düşer ve seçici penceresi onunla birlikte kaybolur.
+static DIALOG_OPEN: AtomicBool = AtomicBool::new(false);
+
+/// Bir seçici penceresi açık kaldığı sürece popover'ın kendiliğinden gizlenmesini durdurur.
+/// Düşürülünce (seçici kapanınca) bayrak kalkar ve popover görünürse odağı ona geri verir.
+pub struct DialogGuard(AppHandle);
+
+impl DialogGuard {
+    pub fn new(app: &AppHandle) -> Self {
+        DIALOG_OPEN.store(true, Ordering::SeqCst);
+        // Seçici penceresinin öne gelmesi için uygulamayı etkinleştir (Dock'ta görünmese de).
+        #[cfg(target_os = "macos")]
+        let _ = app.run_on_main_thread(|| {
+            if let Some(mtm) = objc2::MainThreadMarker::new() {
+                #[allow(deprecated)]
+                objc2_app_kit::NSApplication::sharedApplication(mtm)
+                    .activateIgnoringOtherApps(true);
+            }
+        });
+        DialogGuard(app.clone())
+    }
+}
+
+impl Drop for DialogGuard {
+    fn drop(&mut self) {
+        DIALOG_OPEN.store(false, Ordering::SeqCst);
+        if let Some(w) = self.0.get_webview_window(POPOVER_LABEL)
+            && w.is_visible().unwrap_or(false)
+        {
+            let _ = w.set_focus();
+        }
+    }
+}
 
 /// Popover en son ne zaman odağı kaybedip gizlendi? Tepsi tıklaması
 /// aynı anda geldiğinde popover'ı hemen yeniden açmamak için.
@@ -86,6 +122,7 @@ fn build_popover(app: &AppHandle) -> tauri::Result<()> {
     let handle = app.clone();
     window.on_window_event(move |event| {
         if let WindowEvent::Focused(false) = event
+            && !DIALOG_OPEN.load(Ordering::SeqCst)
             && let Some(w) = handle.get_webview_window(POPOVER_LABEL)
             && w.is_visible().unwrap_or(false)
         {

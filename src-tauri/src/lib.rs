@@ -421,6 +421,7 @@ async fn retry_transfer(svc: Share<'_>, id: String) -> Result<(), String> {
 /// Yerel dosya seçici (çoklu seçim). İptalde boş liste.
 #[tauri::command]
 async fn pick_files(app: AppHandle) -> Result<Vec<String>, String> {
+    let _guard = popover::DialogGuard::new(&app);
     let picked = app.dialog().file().blocking_pick_files();
     Ok(picked
         .unwrap_or_default()
@@ -432,6 +433,7 @@ async fn pick_files(app: AppHandle) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 async fn pick_folder(app: AppHandle) -> Result<Option<String>, String> {
+    let _guard = popover::DialogGuard::new(&app);
     Ok(app
         .dialog()
         .file()
