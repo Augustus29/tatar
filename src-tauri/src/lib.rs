@@ -202,6 +202,12 @@ fn set_settings(app: AppHandle, mgr: State<'_, ManagerHandle>, patch: SettingsPa
             ..Default::default()
         });
     }
+    // Komut listesi değiştiyse bağlı telefonlara yeni listeyi yolla.
+    if before.commands != s.commands
+        && let Some(rc) = app.try_state::<Arc<plugins::runcommand::RunCommandPlugin>>()
+    {
+        rc.send_to_all();
+    }
     let _ = app.emit("settings-changed", &s);
     s
 }
@@ -539,6 +545,17 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         notifier.clone(),
     )));
     registry.register(Arc::new(plugins::findmyphone::FindMyPhonePlugin));
+    let runcommand = Arc::new(plugins::runcommand::RunCommandPlugin::new(
+        shared.clone(),
+        notifier.clone(),
+        Arc::new(plugins::runcommand::ShellRunner),
+        {
+            let app = app.clone();
+            Arc::new(move || show_main(&app))
+        },
+    ));
+    registry.register(runcommand.clone());
+    app.manage(runcommand);
     registry.register(Arc::new(plugins::telephony::TelephonyPlugin::new(
         shared,
         notifier,

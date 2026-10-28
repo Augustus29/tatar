@@ -19,6 +19,7 @@ pub mod battery;
 pub mod findmyphone;
 pub mod notifier;
 pub mod ping;
+pub mod runcommand;
 pub mod telephony;
 
 /// Eklentiler ile yönetici arasında paylaşılan durum: ayarlar, pil bilgisi, arayüz yenileme isteği.

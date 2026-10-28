@@ -22,6 +22,45 @@ impl Default for Notifications {
     }
 }
 
+/// Telefonun düğme olarak gördüğü, bu bilgisayarda çalışacak kullanıcı komutu.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RunCommand {
+    pub id: String,
+    pub name: String,
+    pub command: String,
+}
+
+/// Komut sayısı, ad ve komut uzunluğu üst sınırları (webview'dan gelen veri güvenilmez).
+pub const MAX_COMMANDS: usize = 50;
+const MAX_COMMAND_NAME: usize = 64;
+const MAX_COMMAND_TEXT: usize = 1024;
+
+/// Komut listesini temizler: adlar/kimlikler arındırılır, boşlar atılır, kimlikler tekil olur.
+pub fn sanitize_commands(list: Vec<RunCommand>) -> Vec<RunCommand> {
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::new();
+    for c in list {
+        let name = crate::transfer::names::clean_display_text(&c.name, MAX_COMMAND_NAME);
+        let command: String = c.command.trim().chars().take(MAX_COMMAND_TEXT).collect();
+        let id: String =
+            c.id.chars()
+                .filter(|ch| ch.is_ascii_alphanumeric() || *ch == '-' || *ch == '_')
+                .take(64)
+                .collect();
+        if name.is_empty() || command.is_empty() || command.contains('\0') || id.is_empty() {
+            continue;
+        }
+        if !seen.insert(id.clone()) {
+            continue;
+        }
+        out.push(RunCommand { id, name, command });
+        if out.len() >= MAX_COMMANDS {
+            break;
+        }
+    }
+    out
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
@@ -43,6 +82,8 @@ pub struct Settings {
     pub share_battery: bool,
     pub auto_connect: bool,
     pub onboarded: bool,
+    /// Telefondan çalıştırılabilen komutlar (varsayılan boş).
+    pub commands: Vec<RunCommand>,
 }
 
 pub fn default_shortcuts() -> BTreeMap<String, Vec<String>> {
@@ -74,6 +115,7 @@ impl Default for Settings {
             auto_connect: true,
             // Taze kurulumda ilk açılış akışı gösterilir (arayüz, yüklenmeden önce `true` varsayar).
             onboarded: false,
+            commands: Vec::new(),
         }
     }
 }
@@ -95,6 +137,7 @@ pub struct SettingsPatch {
     pub share_battery: Option<bool>,
     pub auto_connect: Option<bool>,
     pub onboarded: Option<bool>,
+    pub commands: Option<Vec<RunCommand>>,
 }
 
 fn one_of(v: &str, allowed: &[&str]) -> bool {
@@ -131,6 +174,7 @@ impl Settings {
             self.shortcuts.entry(k).or_insert(v);
         }
         self.device_name = crate::protocol::identity::filter_device_name(&self.device_name);
+        self.commands = sanitize_commands(std::mem::take(&mut self.commands));
         self
     }
 
@@ -151,7 +195,8 @@ impl Settings {
             device_name,
             share_battery,
             auto_connect,
-            onboarded
+            onboarded,
+            commands
         );
         *self = std::mem::take(self).sanitized();
     }
@@ -260,6 +305,30 @@ mod tests {
             ..Default::default()
         });
         assert_eq!(s.download_dir, tmp.to_string_lossy());
+    }
+
+    #[test]
+    fn commands_sanitized() {
+        let c = |id: &str, name: &str, cmd: &str| RunCommand {
+            id: id.into(),
+            name: name.into(),
+            command: cmd.into(),
+        };
+        let out = sanitize_commands(vec![
+            c("a", " Kilitle ", " pmset displaysleepnow "),
+            c("a", "Aynı kimlik", "x"),
+            c("b", "", "x"),
+            c("c", "Boş komut", "  "),
+            c("d e/..", "Kimlik", "x"),
+        ]);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].name, "Kilitle");
+        assert_eq!(out[0].command, "pmset displaysleepnow");
+        assert_eq!(out[1].id, "de");
+        let many: Vec<_> = (0..80).map(|i| c(&format!("k{i}"), "n", "x")).collect();
+        assert_eq!(sanitize_commands(many).len(), MAX_COMMANDS);
+        let v = serde_json::to_value(Settings::default()).unwrap();
+        assert_eq!(v["commands"], serde_json::json!([]));
     }
 
     #[test]

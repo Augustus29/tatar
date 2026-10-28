@@ -3,7 +3,7 @@
 mod settings;
 mod trusted;
 
-pub use settings::{Settings, SettingsPatch, SettingsStore};
+pub use settings::{RunCommand, Settings, SettingsPatch, SettingsStore};
 pub use trusted::{TrustedDevice, TrustedStore};
 
 use std::path::Path;
