@@ -304,6 +304,9 @@
   "notify": {
     "trayOpen": "Tatar'ı aç",
     "trayQuit": "Tatar'tan çık",
+    "startFailedTitle": "Tatar başlatılamadı",
+    "startFailedKeychain": "Tatar, Anahtar Zinciri'ndeki kendi anahtarına erişemedi. Eşleşmelerin silinmemesi için uygulama kapanacak. Tatar'ı yeniden açın ve Anahtar Zinciri sorduğunda \"Her Zaman İzin Ver\"e tıklayın.",
+    "startFailedBody": "Tatar ağ bağlantısını başlatamadı. Bilgisayarda KDE Connect açıksa kapatıp Tatar'ı yeniden açın.",
     "fileReceivedTitle": "Dosya alındı",
     "fileReceivedBody": "{device} cihazından {name} ({size}) {folder} klasörüne kaydedildi.",
     "showInFolder": "Finder’da göster",

@@ -16,3 +16,4 @@ v1 kapsamı CLAUDE.md §1'de. Aşağıdakiler istenmeden başlanmaz.
 ## Bilinen sorunlar (v1 içinde çözülecek)
 
 - **macOS bildirimleri görünmüyor:** Ping alınıyor ve bildirim sisteme iletiliyor, ama macOS 26'da izin penceresi çıkmıyor ve Tatar Sistem Ayarları → Bildirimler listesinde görünmüyor. İlk deneme: uygulamayı `/Applications` klasörüne kopyalayıp oradan açmak. Olmazsa ad-hoc imzayı ve UNUserNotificationCenter yetkilendirme hatasını tanılama günlüğünden incele.
+- **Windows'ta boş disk alanı denetimi yok:** Gelen dosyadan önce boş alan yalnızca macOS'ta denetleniyor. Windows için `windows` crate'inde `Win32_Storage_FileSystem` özelliği açılıp `GetDiskFreeSpaceExW` kullanılmalı (`transfer/safety.rs` içindeki TODO). Aynı özellikle `MoveFileExW` (üzerine yazmayan taşıma) da eklenebilir.

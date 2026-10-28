@@ -331,7 +331,8 @@ pub fn parse_alf_listapps(out: &str, exe: &str) -> Option<bool> {
             continue;
         };
         let path = path.trim();
-        if path.is_empty() || !exe.starts_with(path) {
+        // Metin öneki değil, yol bileşeni karşılaştırması: "Tatar.appX" "Tatar.app" altında sayılmaz.
+        if path.is_empty() || !std::path::Path::new(exe).starts_with(path) {
             continue;
         }
         for next in lines.by_ref() {
@@ -584,6 +585,17 @@ mod tests {
             Some(true)
         );
         assert_eq!(parse_alf_listapps(list, "/Applications/Bar.app/x"), None);
+    }
+
+    #[test]
+    fn alf_listapps_matches_path_component_not_text_prefix() {
+        let list = "ALF: total number of apps = 1 \n\n1 :  /Applications/Tatar.app\n\t ( Block incoming connections ) \n";
+        // Metin olarak önek olsa da farklı bir uygulama: eşleşmemeli.
+        assert_eq!(parse_alf_listapps(list, "/Applications/Tatar.appX/x"), None);
+        assert_eq!(
+            parse_alf_listapps(list, "/Applications/Tatar.app/Contents/MacOS/tatar"),
+            Some(false)
+        );
     }
 
     #[test]

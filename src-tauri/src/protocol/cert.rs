@@ -137,10 +137,9 @@ pub fn generate(device_id: &str) -> Result<(Vec<u8>, Vec<u8>), String> {
     Ok((cert.der().to_vec(), key.serialize_der()))
 }
 
+/// Ortak güvenli yazım (0o600 geçici dosya + fsync + rename) yardımcısı.
 fn write_private(path: &Path, data: &[u8]) -> Result<(), String> {
-    let tmp = path.with_extension("tmp");
-    std::fs::write(&tmp, data).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, path).map_err(|e| e.to_string())
+    crate::store::write_atomic(path, data).map_err(|e| e.to_string())
 }
 
 impl LocalIdentity {
@@ -148,7 +147,8 @@ impl LocalIdentity {
     /// (aynı id ile yeni sertifika, telefondaki eski güveni kırık bırakırdı).
     pub fn load_or_create(dir: &Path, keys: &dyn KeyStore) -> Result<LocalIdentity, String> {
         std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-        if let Some(existing) = Self::try_load(dir, keys) {
+        // Anahtar zinciri HATASI "anahtar yok" değildir: hata varsa mevcut kimliğe dokunmadan çık.
+        if let Some(existing) = Self::try_load(dir, keys)? {
             return Ok(existing);
         }
         let device_id = generate_device_id();
@@ -168,14 +168,25 @@ impl LocalIdentity {
         })
     }
 
-    fn try_load(dir: &Path, keys: &dyn KeyStore) -> Option<LocalIdentity> {
+    /// `Ok(None)`: kimlik gerçekten yok/bozuk/uyuşmuyor (yeniden üretilebilir).
+    /// `Err`: anahtar zinciri okunamadı; mevcut anahtarın üzerine ASLA yazılmamalı.
+    fn try_load(dir: &Path, keys: &dyn KeyStore) -> Result<Option<LocalIdentity>, String> {
+        let Some(pem) = keys
+            .load()
+            .map_err(|e| format!("anahtar zincirine erişilemedi: {e}"))?
+        else {
+            return Ok(None);
+        };
+        Ok(Self::assemble(dir, &pem))
+    }
+
+    fn assemble(dir: &Path, pem: &str) -> Option<LocalIdentity> {
         let device_id = std::fs::read_to_string(dir.join(ID_FILE))
             .ok()?
             .trim()
             .to_string();
         let cert_der = std::fs::read(dir.join(CERT_FILE)).ok()?;
-        let pem = keys.load().ok()??;
-        let key = KeyPair::from_pem(&pem).ok()?;
+        let key = KeyPair::from_pem(pem).ok()?;
         if !is_valid_device_id(&device_id)
             || common_name(&cert_der).as_deref() != Some(device_id.as_str())
             || !validity_ok(&cert_der)
@@ -245,6 +256,40 @@ mod tests {
         let c = LocalIdentity::load_or_create(&dir, &keys).unwrap();
         assert!(c.regenerated);
         assert_ne!(a.device_id, c.device_id);
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// Anahtar zinciri hata verirse kimlik yeniden üretilmez, anahtar korunur.
+    struct FailingKeyStore {
+        stored: Mutex<u32>,
+    }
+    impl KeyStore for FailingKeyStore {
+        fn load(&self) -> Result<Option<String>, String> {
+            Err("kilitli".into())
+        }
+        fn store(&self, _pem: &str) -> Result<(), String> {
+            *self.stored.lock().unwrap() += 1;
+            Ok(())
+        }
+        fn delete(&self) -> Result<(), String> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn keychain_error_does_not_regenerate() {
+        let dir = std::env::temp_dir().join(format!("tatar-cert-{}", generate_device_id()));
+        let good = MemoryKeyStore::default();
+        let a = LocalIdentity::load_or_create(&dir, &good).unwrap();
+        let bad = FailingKeyStore {
+            stored: Mutex::new(0),
+        };
+        assert!(LocalIdentity::load_or_create(&dir, &bad).is_err());
+        assert_eq!(*bad.stored.lock().unwrap(), 0);
+        // Dosyalar da aynen duruyor.
+        let b = LocalIdentity::load_or_create(&dir, &good).unwrap();
+        assert!(!b.regenerated);
+        assert_eq!(a.device_id, b.device_id);
         let _ = std::fs::remove_dir_all(dir);
     }
 }

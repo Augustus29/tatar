@@ -2,6 +2,7 @@
 //! Aktarım motoru `plugins/share.rs` içindedir.
 
 pub mod names;
+pub mod safety;
 
 use serde::Serialize;
 

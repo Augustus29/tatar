@@ -304,6 +304,9 @@
   "notify": {
     "trayOpen": "Open Tatar",
     "trayQuit": "Quit Tatar",
+    "startFailedTitle": "Tatar couldn't start",
+    "startFailedKeychain": "Tatar couldn't access its key in the Keychain. The app will quit so your pairings are not lost. Reopen Tatar and click \"Always Allow\" when the Keychain asks.",
+    "startFailedBody": "Tatar couldn't start networking. If KDE Connect is running on this computer, quit it and reopen Tatar.",
     "fileReceivedTitle": "File received",
     "fileReceivedBody": "{name} ({size}) from {device} was saved to {folder}.",
     "showInFolder": "Show in Finder",

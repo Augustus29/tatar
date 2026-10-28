@@ -114,6 +114,18 @@ impl Settings {
         if !one_of(&self.mute_mode, &["mute", "lower"]) {
             self.mute_mode = d.mute_mode;
         }
+        // İndirme klasörü webview'dan gelebilir: yalnızca var olan, hassas olmayan bir klasör.
+        // Geçersizse varsayılan İndirilenler'e (o da uygun değilse boşa = uygulama varsayılanı) döner.
+        if !self.download_dir.trim().is_empty()
+            && !crate::transfer::safety::download_dir_allowed(&self.download_dir)
+        {
+            log::warn!("geçersiz indirme klasörü reddedildi, varsayılana dönüldü");
+            self.download_dir = crate::transfer::safety::home_dir()
+                .map(|h| h.join("Downloads"))
+                .filter(|d| crate::transfer::safety::download_dir_allowed(&d.to_string_lossy()))
+                .map(|d| d.to_string_lossy().into_owned())
+                .unwrap_or_default();
+        }
         // Kayıp kısayol kimliklerini varsayılanlarla tamamla.
         for (k, v) in default_shortcuts() {
             self.shortcuts.entry(k).or_insert(v);
@@ -225,6 +237,29 @@ mod tests {
         assert!(!s.mute_on_call);
         assert_eq!(s.clipboard_mode, "auto");
         assert_eq!(s.shortcuts.len(), 5);
+    }
+
+    #[test]
+    fn invalid_download_dir_falls_back() {
+        let store = SettingsStore::load(None);
+        for bad in [
+            "goreli/yol",
+            "/etc",
+            "/olmayan/klasor/xyz",
+            "/System/Library",
+        ] {
+            let s = store.patch(SettingsPatch {
+                download_dir: Some(bad.into()),
+                ..Default::default()
+            });
+            assert_ne!(s.download_dir, bad, "{bad}");
+        }
+        let tmp = std::env::temp_dir();
+        let s = store.patch(SettingsPatch {
+            download_dir: Some(tmp.to_string_lossy().into_owned()),
+            ..Default::default()
+        });
+        assert_eq!(s.download_dir, tmp.to_string_lossy());
     }
 
     #[test]

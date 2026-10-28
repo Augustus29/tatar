@@ -16,7 +16,9 @@ use tokio_rustls::{TlsAcceptor, TlsConnector, TlsStream};
 use tokio_util::sync::CancellationToken;
 
 use super::cert::{LocalIdentity, common_name};
-use super::identity::{Identity, PROTOCOL_VERSION, verify_secure_identity};
+use super::identity::{
+    Identity, MAX_TCP_PORT, MIN_TCP_PORT, PROTOCOL_VERSION, verify_secure_identity,
+};
 use super::packet::{
     MAX_IDENTITY_LINE, MAX_PACKET_LINE, MAX_UNPAIRED_LINE, NetworkPacket, read_line_limited,
 };
@@ -25,6 +27,13 @@ use crate::store::TrustedStore;
 
 const IO_TIMEOUT: Duration = Duration::from_secs(5);
 const TLS_TIMEOUT: Duration = Duration::from_secs(10);
+/// Tek bir el sıkışmanın (TCP + düz kimlik + TLS + TLS kimliği) toplam süresi. Adım başına
+/// zaman aşımları toplamda bunu aşabildiği için (yavaş gönderen saldırgan) ayrıca uygulanır.
+pub const HANDSHAKE_DEADLINE: Duration = Duration::from_secs(15);
+/// Eşleşmemiş bir bağlantıda bu kadar bozuk paketten sonra bağlantı kapatılır.
+pub const MAX_BAD_PACKETS_UNPAIRED: u32 = 20;
+/// Okuyucudan yöneticiye giden olay kuyruğu (dolunca okuyucu bekler: geri basınç).
+pub const LINK_EVENT_QUEUE: usize = 256;
 
 pub type HsResult<T> = Result<T, String>;
 
@@ -43,7 +52,11 @@ pub type TlsIo = TlsStream<TcpStream>;
 pub struct Established {
     pub identity: Identity,
     pub cert_der: Vec<u8>,
+    /// Eşin gerçek uzak adresi (TCP soketinden; keşif duyurusundan değil).
     pub addr: SocketAddr,
+    /// Eşin TCP dinleme portu: giden bağlantıda bağlandığımız port; gelende kimlikteki `tcpPort`
+    /// (aralıkta ise). Gelen bağlantının kaynak portu geçicidir, bu yüzden kullanılmaz.
+    pub listen_port: Option<u16>,
     pub reader: BufReader<ReadHalf<TlsIo>>,
     pub writer: WriteHalf<TlsIo>,
 }
@@ -82,6 +95,7 @@ async fn finish(
     addr: SocketAddr,
     pre_device_id: Option<String>,
     pre_protocol: i64,
+    outgoing: bool,
 ) -> HsResult<Established> {
     let cert_der = peer_cert_der(&tls).ok_or("eş sertifika sunmadı")?;
     let (rd, mut wr) = tokio::io::split(tls);
@@ -135,10 +149,18 @@ async fn finish(
             return Err("protokol düşürme girişimi".into());
         }
     }
+    let listen_port = if outgoing {
+        Some(addr.port())
+    } else {
+        secure
+            .tcp_port
+            .filter(|p| (MIN_TCP_PORT..=MAX_TCP_PORT).contains(p))
+    };
     Ok(Established {
         identity: secure,
         cert_der,
         addr,
+        listen_port,
         reader,
         writer: wr,
     })
@@ -147,6 +169,16 @@ async fn finish(
 /// Bağlantıyı BİZ açtık: düz kimliği yaz, TLS SUNUCUSU ol.
 /// `target`: biliniyorsa (UDP/mDNS'ten) (deviceId, protocolVersion); IP ile eklemede `None`.
 pub async fn connect_out(
+    ctx: &HandshakeCtx,
+    addr: SocketAddr,
+    target: Option<(String, i64)>,
+) -> HsResult<Established> {
+    timeout(HANDSHAKE_DEADLINE, connect_out_inner(ctx, addr, target))
+        .await
+        .map_err(|_| "el sıkışma toplam süreyi aştı".to_string())?
+}
+
+async fn connect_out_inner(
     ctx: &HandshakeCtx,
     addr: SocketAddr,
     target: Option<(String, i64)>,
@@ -182,12 +214,23 @@ pub async fn connect_out(
         addr,
         tid.map(str::to_string),
         tproto,
+        true,
     )
     .await
 }
 
 /// Bağlantıyı BİZE açtılar: düz kimliği oku, TLS İSTEMCİSİ ol.
 pub async fn accept_in(
+    ctx: &HandshakeCtx,
+    stream: TcpStream,
+    addr: SocketAddr,
+) -> HsResult<Established> {
+    timeout(HANDSHAKE_DEADLINE, accept_in_inner(ctx, stream, addr))
+        .await
+        .map_err(|_| "el sıkışma toplam süreyi aştı".to_string())?
+}
+
+async fn accept_in_inner(
     ctx: &HandshakeCtx,
     stream: TcpStream,
     addr: SocketAddr,
@@ -243,6 +286,7 @@ pub async fn accept_in(
         addr,
         Some(plain.device_id.clone()),
         plain.protocol_version,
+        false,
     )
     .await
 }
@@ -274,7 +318,7 @@ pub fn spawn_link(
     device_id: String,
     generation: u64,
     paired: Arc<AtomicBool>,
-    events: mpsc::UnboundedSender<LinkEvent>,
+    events: mpsc::Sender<LinkEvent>,
 ) -> LinkIo {
     let cancel = CancellationToken::new();
     let (tx, mut rx) = mpsc::channel::<NetworkPacket>(256);
@@ -307,6 +351,7 @@ pub fn spawn_link(
         let cancel = cancel.clone();
         let device_id = device_id.clone();
         tokio::spawn(async move {
+            let mut bad_packets: u32 = 0;
             loop {
                 let max = if paired.load(Ordering::Relaxed) {
                     MAX_PACKET_LINE
@@ -320,14 +365,33 @@ pub fn spawn_link(
                 match line {
                     Ok(Some(l)) => match NetworkPacket::parse(&l, max) {
                         Ok(packet) => {
-                            let _ = events.send(LinkEvent::Packet {
+                            let ev = LinkEvent::Packet {
                                 device_id: device_id.clone(),
                                 generation,
                                 packet,
-                            });
+                            };
+                            // Kuyruk doluysa bekle (geri basınç); iptal edilirse çık.
+                            let sent = tokio::select! {
+                                _ = cancel.cancelled() => break,
+                                r = events.send(ev) => r,
+                            };
+                            if sent.is_err() {
+                                break;
+                            }
                         }
                         // Bozuk tek paket: içerik loglanmaz.
-                        Err(e) => log::warn!("bozuk paket atıldı: {e}"),
+                        Err(e) => {
+                            bad_packets = bad_packets.saturating_add(1);
+                            if bad_packets == 1 {
+                                log::warn!("bozuk paket atıldı: {e}");
+                            }
+                            if !paired.load(Ordering::Relaxed)
+                                && bad_packets >= MAX_BAD_PACKETS_UNPAIRED
+                            {
+                                log::warn!("eşleşmemiş bağlantıda çok bozuk paket, kapatılıyor");
+                                break;
+                            }
+                        }
                     },
                     Ok(None) => break,
                     Err(e) => {
@@ -337,10 +401,12 @@ pub fn spawn_link(
                 }
             }
             cancel.cancel();
-            let _ = events.send(LinkEvent::Closed {
-                device_id,
-                generation,
-            });
+            let _ = events
+                .send(LinkEvent::Closed {
+                    device_id,
+                    generation,
+                })
+                .await;
         });
     }
     LinkIo { tx, cancel }

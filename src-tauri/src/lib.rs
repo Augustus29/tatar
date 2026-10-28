@@ -456,6 +456,11 @@ async fn open_file(svc: Share<'_>, id: String) -> Result<(), String> {
         return Err("yalnızca alınan dosyalar açılır".into());
     }
     let path = svc.file_path(&id).ok_or("dosya bulunamadı")?;
+    // GÜVENLİK: çalıştırılabilir/otomatik eylemli türler, klasörler ve sembolik bağlar
+    // açılmaz; yalnızca Finder/Explorer'da gösterilir.
+    if transfer::safety::should_reveal_instead(&path) {
+        return tauri_plugin_opener::reveal_item_in_dir(path).map_err(|e| e.to_string());
+    }
     tauri_plugin_opener::open_path(path, None::<&str>).map_err(|e| e.to_string())
 }
 
@@ -520,6 +525,7 @@ impl ShareNotifier for AppNotifier {
 /// Protokol yöneticisini Tauri'nin tokio çalışma zamanında başlatır.
 fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let data_dir = app.path().app_data_dir()?;
+    let data_dir_for_share = data_dir.clone();
     let keys = Arc::new(KeyringStore::new(KEYCHAIN_SERVICE, KEYCHAIN_USER));
     let mut registry = plugins::Registry::new();
     let shared = registry.shared();
@@ -546,7 +552,25 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     registry.register(Arc::new(SharePlugin(share.clone())));
     let cfg = ManagerConfig::production(data_dir, keys, registry);
     let sink = Arc::new(TauriSink(app.clone()));
-    let handle = tauri::async_runtime::block_on(manager::start(cfg, sink.clone()))?;
+    let handle = match tauri::async_runtime::block_on(manager::start(cfg, sink.clone())) {
+        Ok(h) => h,
+        Err(e) => {
+            // Anahtar zinciri okunamadıysa kimliği yeniden üretip eşleşmeleri silmek yerine
+            // kullanıcıyı uyar ve çık; bir sonraki açılışta izin verilince her şey yerinde kalır.
+            let lang = i18n::resolve_language("system");
+            let body = if e.starts_with("anahtar zincirine") {
+                "startFailedKeychain"
+            } else {
+                "startFailedBody"
+            };
+            app.dialog()
+                .message(i18n::notify_text(lang, body, &[]))
+                .title(i18n::notify_text(lang, "startFailedTitle", &[]))
+                .kind(tauri_plugin_dialog::MessageDialogKind::Error)
+                .blocking_show();
+            return Err(e.into());
+        }
+    };
     clipboard.start(handle.settings_store());
     shortcuts::register_all(app, &handle.get_settings().shortcuts);
 
@@ -561,6 +585,22 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         });
     }
+    // Önceki çalışmadan kalan yarım indirmeleri (1 saatten eski, yalnızca kendi adımız) temizle.
+    {
+        let s = handle.get_settings();
+        let dir = if s.download_dir.trim().is_empty() {
+            default_dir.clone()
+        } else {
+            std::path::PathBuf::from(s.download_dir.trim())
+        };
+        std::thread::spawn(move || {
+            let n =
+                transfer::safety::cleanup_stale_parts(&dir, std::time::Duration::from_secs(3600));
+            if n > 0 {
+                log::info!("{n} eski yarım indirme silindi");
+            }
+        });
+    }
     share.attach(ShareEnv {
         local: handle.local_identity(),
         settings: handle.settings_store(),
@@ -571,6 +611,7 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             clipboard: clipboard.clone(),
         }),
         default_download_dir: default_dir,
+        data_dir: data_dir_for_share,
         payload_ports: DEFAULT_PAYLOAD_PORTS,
     });
     app.manage(share);

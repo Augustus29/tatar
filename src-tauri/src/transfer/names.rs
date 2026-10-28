@@ -26,6 +26,40 @@ fn is_bidi_control(c: char) -> bool {
     matches!(c, '\u{202A}'..='\u{202E}' | '\u{2066}'..='\u{2069}' | '\u{200E}' | '\u{200F}')
 }
 
+/// Unicode "biçim" (Cf) karakterleri ile satır/paragraf ayırıcıları (U+2028/2029): görünmez,
+/// metni gizleyip yeniden sıralayabilir ya da ad/bildirim sahtekârlığına yarar.
+pub fn is_format_char(c: char) -> bool {
+    matches!(c,
+        '\u{00AD}'
+        | '\u{0600}'..='\u{0605}'
+        | '\u{061C}'
+        | '\u{06DD}'
+        | '\u{070F}'
+        | '\u{180E}'
+        | '\u{200B}'..='\u{200F}'
+        | '\u{2028}' | '\u{2029}'
+        | '\u{202A}'..='\u{202E}'
+        | '\u{2060}'..='\u{2064}'
+        | '\u{2066}'..='\u{206F}'
+        | '\u{FEFF}'
+        | '\u{FFF9}'..='\u{FFFB}')
+}
+
+/// Ağdan gelen, kullanıcıya bildirimde gösterilecek metni temizler: denetim karakterleri
+/// (satır sonu/sekme boşluğa çevrilir), biçim karakterleri ve bidi işaretleri atılır; kenar
+/// boşlukları kesilir; en çok `max_chars` karakter kalır.
+pub fn clean_display_text(s: &str, max_chars: usize) -> String {
+    let mapped: String = s
+        .chars()
+        .filter_map(|c| match c {
+            '\n' | '\r' | '\t' => Some(' '),
+            c if c.is_control() || is_format_char(c) || is_bidi_control(c) => None,
+            c => Some(c),
+        })
+        .collect();
+    mapped.trim().chars().take(max_chars).collect()
+}
+
 /// Sondaki boşluk ve noktaları (Windows bunları sessizce atar) ile baştaki boşlukları keser.
 fn trim_edges(s: &str) -> &str {
     s.trim_start_matches([' ', '\t'])
@@ -61,7 +95,7 @@ pub fn sanitize_filename(raw: &str) -> String {
     //    karakterleri `_` yap.
     let cleaned: String = last
         .chars()
-        .filter(|c| !c.is_control() && !is_bidi_control(*c))
+        .filter(|c| !c.is_control() && !is_bidi_control(*c) && !is_format_char(*c))
         .map(|c| {
             if matches!(c, '<' | '>' | ':' | '"' | '|' | '?' | '*') {
                 '_'
@@ -142,9 +176,66 @@ pub fn ensure_inside(dir: &Path, path: &Path) -> io::Result<PathBuf> {
     Ok(canon_dir.join(file_name))
 }
 
+/// macOS: `renamex_np(RENAME_EXCL)` ile atomik "yoksa taşı". `Ok(false)` = dosya sistemi
+/// desteklemiyor (kopyalamaya düş). Hedef varsa `AlreadyExists` hatası.
+#[cfg(target_os = "macos")]
+fn rename_excl(from: &Path, to: &Path) -> io::Result<bool> {
+    use std::ffi::CString;
+    use std::os::raw::{c_char, c_int, c_uint};
+    use std::os::unix::ffi::OsStrExt;
+
+    unsafe extern "C" {
+        fn renamex_np(from: *const c_char, to: *const c_char, flags: c_uint) -> c_int;
+    }
+    const RENAME_EXCL: c_uint = 0x0000_0004;
+    let c = |p: &Path| {
+        CString::new(p.as_os_str().as_bytes())
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "yolda NUL var"))
+    };
+    let (f, t) = (c(from)?, c(to)?);
+    // SAFETY: iki işaretçi de çağrı boyunca geçerli, NUL ile biten C dizeleridir.
+    let rc = unsafe { renamex_np(f.as_ptr(), t.as_ptr(), RENAME_EXCL) };
+    if rc == 0 {
+        return Ok(true);
+    }
+    let e = io::Error::last_os_error();
+    match e.raw_os_error() {
+        // ENOTSUP / EINVAL: bu birim RENAME_EXCL'yi bilmiyor.
+        Some(45) | Some(22) => Ok(false),
+        _ => Err(e),
+    }
+}
+
+/// `part`'ı, var olan hiçbir şeyin üzerine yazmadan `target`'a taşır. Hedef varsa
+/// `AlreadyExists`. Atomik "yoksa taşı" yoksa: `create_new` ile açılmış hedefe kopyala, sonra
+/// `part`'ı sil (yarış penceresi kapalı: başkasının dosyası asla ezilmez).
+fn move_no_clobber(part: &Path, target: &Path) -> io::Result<()> {
+    #[cfg(target_os = "macos")]
+    if rename_excl(part, target)? {
+        return Ok(());
+    }
+    let mut dst = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(target)?;
+    let copied = std::fs::File::open(part).and_then(|mut src| io::copy(&mut src, &mut dst));
+    let res = copied.and_then(|_| dst.sync_all());
+    drop(dst);
+    match res {
+        Ok(()) => {
+            let _ = std::fs::remove_file(part);
+            Ok(())
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(target); // yarım kalan kendi kopyamız
+            Err(e)
+        }
+    }
+}
+
 /// Tamamlanmış `.part` dosyasını `dir` içinde, var olan hiçbir dosyanın üzerine yazmadan
 /// son adına taşır (`ad (1).ext`...). Önce sabit bağ (atomik "yoksa oluştur"), bağ desteklenmiyorsa
-/// (ör. FAT) var olmayan ada `rename`. Son yolu döndürür.
+/// (ör. FAT) hedefi ezmeyen taşıma (`move_no_clobber`). Son yolu döndürür.
 pub fn finalize_no_clobber(part: &Path, dir: &Path, name: &str) -> io::Result<PathBuf> {
     for n in 0..10_000u32 {
         let target = ensure_inside(dir, &dir.join(candidate_name(name, n)))?;
@@ -155,12 +246,12 @@ pub fn finalize_no_clobber(part: &Path, dir: &Path, name: &str) -> io::Result<Pa
             }
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
             Err(_) => {
-                // Sabit bağ yok: yine de üzerine yazma.
-                if std::fs::symlink_metadata(&target).is_ok() {
-                    continue;
+                // Sabit bağ yok: yine de üzerine yazma (kontrol-sonra-yaz yarışı olmadan).
+                match move_no_clobber(part, &target) {
+                    Ok(()) => return Ok(target),
+                    Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+                    Err(e) => return Err(e),
                 }
-                std::fs::rename(part, &target)?;
-                return Ok(target);
             }
         }
     }
@@ -331,6 +422,54 @@ mod tests {
         assert!(ensure_inside(&d, Path::new("/etc/passwd")).is_err());
         assert!(ensure_inside(&sub, &d.join("x.txt")).is_err());
         assert!(ensure_inside(&d, &d.join("..")).is_err());
+        let _ = std::fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn format_chars_stripped_from_names() {
+        assert_eq!(
+            sanitize_filename("a\u{200B}b\u{FEFF}c\u{00AD}.txt"),
+            "abc.txt"
+        );
+        assert_eq!(sanitize_filename("x\u{2028}y\u{2029}z.pdf"), "xyz.pdf");
+        assert_eq!(sanitize_filename("r\u{2066}e\u{2069}.exe"), "re.exe");
+        assert_eq!(
+            sanitize_filename("a\u{061C}b\u{180E}c\u{FFF9}.md"),
+            "abc.md"
+        );
+        // Sıradan Unicode korunur.
+        assert_eq!(sanitize_filename("çay ☕.txt"), "çay ☕.txt");
+    }
+
+    #[test]
+    fn display_text_is_cleaned_and_capped() {
+        assert_eq!(
+            clean_display_text("  a\nb\u{202E}c\u{0}d\u{2028}e ", 50),
+            "a bcde"
+        );
+        assert_eq!(
+            clean_display_text(&"x".repeat(500), 200).chars().count(),
+            200
+        );
+        assert_eq!(clean_display_text("şğü", 2), "şğ");
+        assert_eq!(clean_display_text("\u{200B}", 10), "");
+    }
+
+    #[test]
+    fn move_no_clobber_never_overwrites() {
+        let d = tmp("mnc");
+        let part = d.join("x.part");
+        let target = d.join("hedef.txt");
+        std::fs::write(&part, b"yeni").unwrap();
+        std::fs::write(&target, b"eski").unwrap();
+        let e = move_no_clobber(&part, &target).unwrap_err();
+        assert_eq!(e.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read(&target).unwrap(), b"eski");
+        assert!(part.exists(), "başarısızsa kaynak korunur");
+        let free = d.join("bos.txt");
+        move_no_clobber(&part, &free).unwrap();
+        assert_eq!(std::fs::read(&free).unwrap(), b"yeni");
+        assert!(!part.exists());
         let _ = std::fs::remove_dir_all(d);
     }
 

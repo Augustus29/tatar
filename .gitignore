@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .claude/worktrees/
+
+# Gizli anahtarlar ve ortam dosyaları (yanlışlıkla commit edilmesin)
+.env
+.env.*
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx

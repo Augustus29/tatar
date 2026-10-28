@@ -13,6 +13,13 @@ fn current_exe_string() -> String {
         .unwrap_or_default()
 }
 
+/// Windows sistem aracının tam yolu (`%SystemRoot%\System32\<ad>.exe`).
+/// PATH üzerinden aranmaz; geçerli dizine ya da PATH'e yerleştirilmiş sahte bir program çalışmasın diye.
+fn system32_exe(name: &str) -> String {
+    let root = std::env::var("SystemRoot").unwrap_or_else(|_| r"C:\Windows".to_string());
+    format!(r"{root}\System32\{name}.exe")
+}
+
 /// Windows'ta konsol penceresi açmadan alt süreç çalıştırır.
 fn run(program: &str, args: &[&str]) -> Option<String> {
     let mut cmd = Command::new(program);
@@ -49,7 +56,10 @@ fn ssid() -> Option<String> {
 
 #[cfg(windows)]
 fn ssid() -> Option<String> {
-    crate::troubleshoot::parse_netsh_ssid(&run("netsh", &["wlan", "show", "interfaces"])?)
+    crate::troubleshoot::parse_netsh_ssid(&run(
+        &system32_exe("netsh"),
+        &["wlan", "show", "interfaces"],
+    )?)
 }
 
 #[cfg(not(any(target_os = "macos", windows)))]
@@ -94,7 +104,7 @@ pub fn firewall_state() -> Firewall {
 pub fn firewall_state() -> Firewall {
     let exe = current_exe_string();
     let out = run(
-        "netsh",
+        &system32_exe("netsh"),
         &[
             "advfirewall",
             "firewall",
@@ -147,7 +157,8 @@ pub fn open_system_settings(target: &str) -> Result<(), String> {
         SettingsAction::Url(u) => {
             tauri_plugin_opener::open_url(u, None::<&str>).map_err(|e| e.to_string())
         }
-        SettingsAction::Command(p, a) => Command::new(p)
+        // Komut adı (ör. "control") yalnızca Windows'ta üretilir; tam yola çevrilip çalıştırılır.
+        SettingsAction::Command(p, a) => Command::new(system32_exe(p))
             .args(a)
             .spawn()
             .map(|_| ())

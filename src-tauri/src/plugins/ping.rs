@@ -6,6 +6,7 @@ use super::notifier::SharedNotifier;
 use super::{DeviceHandle, Plugin, Shared};
 use crate::i18n::{notify_text, resolve_language};
 use crate::protocol::packet::NetworkPacket;
+use crate::transfer::names::clean_display_text;
 
 pub const TYPE_PING: &str = "kdeconnect.ping";
 
@@ -40,9 +41,14 @@ impl Plugin for PingPlugin {
         let lang = resolve_language(&self.shared.settings().language);
         let title = notify_text(lang, "pingTitle", &[]);
         // Telefon ileti de gönderebilir; yoksa varsayılan metin. İleti uzunluğu sınırlanır.
-        let body = match packet.body_str("message").map(str::trim) {
-            Some(m) if !m.is_empty() => m.chars().take(200).collect(),
-            _ => notify_text(lang, "pingBody", &[("device", &device.name)]),
+        // Denetim/biçim/bidi karakterleri atılır (bildirimde sahtecilik yapılamasın).
+        let msg = packet
+            .body_str("message")
+            .map(|m| clean_display_text(m, 200))
+            .filter(|m| !m.is_empty());
+        let body = match msg {
+            Some(m) => m,
+            None => notify_text(lang, "pingBody", &[("device", &device.name)]),
         };
         self.notifier
             .notify(&format!("{}: {title}", device.name), &body);

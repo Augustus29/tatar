@@ -1,8 +1,9 @@
 //! `kdeconnect.telephony` (telefon -> Tatar). Gelen aramada sistem sesini kapatır / azaltır,
 //! arama bitince (ya da bağlantı kopunca) önceki durumu aynen geri yükler.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use super::notifier::SharedNotifier;
 use super::{DeviceHandle, Plugin, Shared};
@@ -13,6 +14,9 @@ use crate::protocol::packet::NetworkPacket;
 pub const TYPE_TELEPHONY: &str = "kdeconnect.telephony";
 /// "Sesi azalt" kipinde yeni ses = eski sesin bu oranı.
 pub const LOWER_FACTOR: f32 = 0.2;
+/// "Çalıyor" sonrası bu sürede ne `talking` ne iptal ne de cevapsız gelirse (paket kayboldu,
+/// telefon uykuya daldı...) ses kendiliğinden geri yüklenir.
+pub const RING_WATCHDOG: Duration = Duration::from_secs(120);
 
 /// Aramada sese ne yapıldı?
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,6 +33,9 @@ struct Inner {
     owners: HashSet<String>,
     /// Bizim değiştirmeden önceki durum; yalnızca gerçekten değiştirdiysek dolu.
     saved: Option<OutputState>,
+    /// Cihaz başına son arama olayının damgası (bekçi köpeği bayat mı diye bakar).
+    stamps: HashMap<String, u64>,
+    next_stamp: u64,
 }
 
 /// Arama -> ses durum makinesi. Ses arka ucu soyutlandığı için sahte bir uçla test edilir.
@@ -78,10 +85,27 @@ impl<A: AudioBackend> CallMuter<A> {
         })
     }
 
+    /// Cihazdan yeni bir arama olayı geldi: yeni damga verir, eski bekçi köpeğini geçersiz kılar.
+    pub fn touch(&self, device_id: &str) -> u64 {
+        let mut g = self.inner.lock().unwrap();
+        g.next_stamp += 1;
+        let s = g.next_stamp;
+        g.stamps.insert(device_id.to_string(), s);
+        s
+    }
+
+    /// Bekçi köpeği süresi doldu: damga hâlâ günceliyse (arada olay gelmediyse) aramayı bitmiş
+    /// sayıp sesi geri yükler. Geri yükleme yapıldıysa `true`.
+    pub fn expire(&self, device_id: &str, stamp: u64) -> bool {
+        let current = self.inner.lock().unwrap().stamps.get(device_id).copied();
+        current == Some(stamp) && self.ended(device_id)
+    }
+
     /// Cihazın araması bitti (ya da bağlantısı koptu). Son arama bittiyse sesi geri yükler.
     /// Geri yükleme yapıldıysa `true`.
     pub fn ended(&self, device_id: &str) -> bool {
         let mut g = self.inner.lock().unwrap();
+        g.stamps.remove(device_id);
         if !g.owners.remove(device_id) || !g.owners.is_empty() {
             return false;
         }
@@ -95,7 +119,7 @@ impl<A: AudioBackend> CallMuter<A> {
 pub struct TelephonyPlugin<A: AudioBackend + 'static> {
     shared: Arc<Shared>,
     notifier: SharedNotifier,
-    muter: CallMuter<A>,
+    muter: Arc<CallMuter<A>>,
 }
 
 impl<A: AudioBackend + 'static> TelephonyPlugin<A> {
@@ -103,7 +127,7 @@ impl<A: AudioBackend + 'static> TelephonyPlugin<A> {
         TelephonyPlugin {
             shared,
             notifier,
-            muter: CallMuter::new(audio),
+            muter: Arc::new(CallMuter::new(audio)),
         }
     }
 }
@@ -132,6 +156,18 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
                 let Some(applied) = self.muter.ringing(&device.id, lower) else {
                     return;
                 };
+                if applied != Applied::Untouched {
+                    // Devam paketi gelmezse ses sonsuza dek kısık kalmasın.
+                    let stamp = self.muter.touch(&device.id);
+                    let muter = self.muter.clone();
+                    let dev = device.id.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(RING_WATCHDOG);
+                        if muter.expire(&dev, stamp) {
+                            log::info!("arama olayı gelmedi, ses zaman aşımıyla geri yüklendi");
+                        }
+                    });
+                }
                 let lang = resolve_language(&settings.language);
                 let (t, b) = match applied {
                     Applied::Muted => ("callTitle", "callBody"),
@@ -143,6 +179,10 @@ impl<A: AudioBackend + 'static> Plugin for TelephonyPlugin<A> {
             }
             // Arama sona erdi (iptal) ya da cevapsız kaldı. Cevaplanınca (talking) görüşme
             // sürdüğü için ses kapalı kalır; görüşme bitince talking + isCancel gelir.
+            // Cevaplandı: bekçi köpeği iptal olur, ses görüşme bitene dek kapalı kalır.
+            (Some("talking"), false) => {
+                self.muter.touch(&device.id);
+            }
             (Some("ringing" | "talking"), true) | (Some("missedCall"), false) => {
                 self.muter.ended(&device.id);
             }
@@ -243,6 +283,25 @@ mod tests {
         assert!(a.current().muted);
         assert!(m.ended("b"));
         assert_eq!(a.current(), st(false, 0.7));
+    }
+
+    #[test]
+    fn watchdog_restores_only_if_no_followup() {
+        let a = FakeAudio::new(false, 0.6);
+        let m = CallMuter::new(a.clone());
+        assert_eq!(m.ringing("p", false), Some(Applied::Muted));
+        let s1 = m.touch("p");
+        // Süre dolunca olay gelmediyse geri yüklenir.
+        assert!(m.expire("p", s1));
+        assert_eq!(a.current(), st(false, 0.6));
+        // `talking` gelirse (yeni damga) eski bekçi köpeği etkisiz kalır.
+        assert_eq!(m.ringing("p", false), Some(Applied::Muted));
+        let s2 = m.touch("p");
+        let _s3 = m.touch("p");
+        assert!(!m.expire("p", s2));
+        assert!(a.current().muted);
+        assert!(m.ended("p"));
+        assert_eq!(a.current(), st(false, 0.6));
     }
 
     #[test]

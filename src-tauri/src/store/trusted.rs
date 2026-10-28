@@ -100,7 +100,9 @@ impl TrustedStore {
         m.clear();
         self.save(&m);
     }
-    /// Son IP/port/görülme ve (varsa) ad bilgisini günceller.
+    /// Son IP/port/görülme ve (varsa) ad bilgisini günceller. Yalnızca DOĞRULANMIŞ bir bağlantıdan
+    /// (TLS + sertifika sabitleme geçmiş) çağrılmalı; UDP/mDNS keşfinden asla (sahte duyuru
+    /// kayıtlı adresi bozabilir). `port` boşsa eski port korunur.
     pub fn touch(
         &self,
         id: &str,
@@ -113,7 +115,9 @@ impl TrustedStore {
         if let Some(d) = m.get_mut(id) {
             if ip.is_some() {
                 d.last_ip = ip;
-                d.last_port = port;
+                if port.is_some() {
+                    d.last_port = port;
+                }
             }
             if let Some(n) = name {
                 d.name = n.to_string();
@@ -161,6 +165,9 @@ mod tests {
                 .as_deref(),
             Some("10.0.0.2")
         );
+        // Port verilmezse eski port korunur.
+        s2.touch("abc", Some("10.0.0.3".into()), None, None, 6);
+        assert_eq!(s2.get("abc").unwrap().last_port, Some(1720));
         assert!(s2.remove("abc"));
         assert!(TrustedStore::load(Some(p.clone())).list().is_empty());
         let _ = std::fs::remove_file(p);

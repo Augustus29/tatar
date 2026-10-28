@@ -43,6 +43,32 @@ pub fn normalize_ip(ip: IpAddr) -> IpAddr {
     }
 }
 
+/// Yerel ağ adresi mi? Yalnızca özel IPv4 (RFC1918), link-local (169.254/16), IPv6 ULA (fc00::/7)
+/// ve IPv6 link-local (fe80::/10). Loopback, belirsiz (0.0.0.0/::), multicast ve yayın adresleri
+/// ile genel (internet) adresler DEĞİL. Doğrulanmamış UDP/mDNS duyurularının bizi rastgele bir
+/// adrese bağlandırmasını (SSRF benzeri) engeller.
+pub fn is_lan_ip(ip: IpAddr) -> bool {
+    match normalize_ip(ip) {
+        IpAddr::V4(v4) => {
+            !(v4.is_loopback() || v4.is_unspecified() || v4.is_multicast() || v4.is_broadcast())
+                && (v4.is_private() || v4.is_link_local())
+        }
+        IpAddr::V6(v6) => {
+            if v6.is_loopback() || v6.is_unspecified() || v6.is_multicast() {
+                return false;
+            }
+            let first = v6.segments()[0];
+            (first & 0xfe00) == 0xfc00 || (first & 0xffc0) == 0xfe80
+        }
+    }
+}
+
+/// Keşiften gelen adres kabul edilebilir mi? Testlerde (`allow_loopback`) loopback de olur.
+pub fn is_acceptable_peer_ip(ip: IpAddr, allow_loopback: bool) -> bool {
+    let ip = normalize_ip(ip);
+    is_lan_ip(ip) || (allow_loopback && ip.is_loopback())
+}
+
 /// UDP datagramını kimliğe çevirir ve keşif kurallarını uygular (saf fonksiyon, test edilebilir).
 pub fn parse_udp_identity(
     data: &[u8],
@@ -54,7 +80,7 @@ pub fn parse_udp_identity(
         return None;
     }
     let src = normalize_ip(src);
-    if src.is_loopback() && !allow_loopback {
+    if !is_acceptable_peer_ip(src, allow_loopback) {
         return None;
     }
     let packet = NetworkPacket::parse(data, MAX_IDENTITY_LINE).ok()?;
@@ -271,7 +297,7 @@ impl Mdns {
                 let Some(ip) = info
                     .get_addresses_v4()
                     .into_iter()
-                    .find(|a| allow_loopback || !a.is_loopback())
+                    .find(|a| is_acceptable_peer_ip(IpAddr::V4(*a), allow_loopback))
                 else {
                     continue;
                 };
@@ -371,6 +397,49 @@ mod tests {
         assert!(is_local_denied(&Error::from(ErrorKind::HostUnreachable)));
         assert!(is_local_denied(&Error::from(ErrorKind::PermissionDenied)));
         assert!(!is_local_denied(&Error::from(ErrorKind::TimedOut)));
+    }
+
+    #[test]
+    fn lan_ip_classification() {
+        for ok in [
+            "10.1.2.3",
+            "172.16.0.1",
+            "172.31.255.254",
+            "192.168.1.9",
+            "169.254.10.10",
+            "fd00::1",
+            "fc12::1",
+            "fe80::1",
+            "::ffff:192.168.1.9",
+        ] {
+            assert!(is_lan_ip(ip(ok)), "{ok}");
+        }
+        for bad in [
+            "8.8.8.8",
+            "172.32.0.1",
+            "100.64.0.1",
+            "127.0.0.1",
+            "0.0.0.0",
+            "224.0.0.251",
+            "255.255.255.255",
+            "::1",
+            "::",
+            "ff02::fb",
+            "2001:db8::1",
+            "::ffff:8.8.8.8",
+            "::ffff:127.0.0.1",
+        ] {
+            assert!(!is_lan_ip(ip(bad)), "{bad}");
+        }
+        assert!(is_acceptable_peer_ip(ip("127.0.0.1"), true));
+        assert!(!is_acceptable_peer_ip(ip("127.0.0.1"), false));
+        assert!(!is_acceptable_peer_ip(ip("8.8.8.8"), true));
+    }
+
+    #[test]
+    fn udp_rejects_public_source() {
+        assert!(parse_udp_identity(&dgram(PEER, 1716, 8), ip("8.8.8.8"), ME, false).is_none());
+        assert!(parse_udp_identity(&dgram(PEER, 1716, 8), ip("8.8.8.8"), ME, true).is_none());
     }
 
     #[test]

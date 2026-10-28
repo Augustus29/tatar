@@ -2,6 +2,7 @@
 //! (`crate::i18n`); burada yalnızca boyut biçimi ve yer tutucu doldurma vardır.
 
 use crate::i18n::notify_text;
+use crate::transfer::names::clean_display_text;
 
 /// Arayüzdeki `formatSize` ile aynı biçim: 4,2 MB / 4.2 MB, küçüklerde KB.
 pub fn format_size(lang: &str, bytes: u64) -> String {
@@ -45,7 +46,16 @@ pub fn text_received(lang: &str, device: &str) -> (String, String) {
     )
 }
 
+/// Bildirimde gösterilecek en çok bağlantı uzunluğu (karakter).
+const MAX_URL_DISPLAY: usize = 200;
+
 pub fn url_received(lang: &str, device: &str, url: &str) -> (String, String) {
+    // Yalnızca GÖSTERİM için temizlenir ve kısaltılır; panoya giden bağlantı değişmez.
+    let mut shown = clean_display_text(url, MAX_URL_DISPLAY);
+    if url.chars().count() > MAX_URL_DISPLAY {
+        shown.push('…');
+    }
+    let url = shown.as_str();
     (
         notify_text(lang, "urlReceivedTitle", &[]),
         notify_text(lang, "urlReceivedBody", &[("device", device), ("url", url)]),
@@ -76,5 +86,8 @@ mod tests {
         assert_eq!(t, "Link received");
         assert!(b.contains("https://x.y") && b.contains("Pixel"));
         assert_eq!(text_received("en", "P").0, "Text received");
+        let long = format!("https://x.y/{}", "a".repeat(400));
+        let (_, b) = url_received("en", "P", &long);
+        assert!(b.contains('…') && !b.contains(&"a".repeat(250)));
     }
 }

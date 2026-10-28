@@ -35,6 +35,7 @@ use crate::protocol::tls;
 use crate::store::SettingsStore;
 use crate::transfer::Transfer;
 use crate::transfer::names::{ensure_inside, finalize_no_clobber, sanitize_filename};
+use crate::transfer::safety;
 
 pub const TYPE_REQUEST: &str = "kdeconnect.share.request";
 pub const TYPE_UPDATE: &str = "kdeconnect.share.request.update";
@@ -55,7 +56,11 @@ const MAX_KEEP: usize = 200;
 const MAX_TEXT_BYTES: usize = 1024 * 1024;
 const MAX_URL_BYTES: usize = 8 * 1024;
 /// Boyutu bilinmeyen (`payloadSize = -1`) alımlar için üst sınır.
-const MAX_UNKNOWN_SIZE: u64 = 64 * 1024 * 1024 * 1024;
+const MAX_UNKNOWN_SIZE: u64 = 4 * 1024 * 1024 * 1024;
+/// Bir cihazdan aynı anda bekleyen + süren en çok gelen aktarım; fazlası atılır.
+const MAX_INCOMING_PER_DEVICE: usize = 16;
+/// İndirmeden önce, dosya boyutuna eklenen disk alanı payı.
+const FREE_SPACE_MARGIN: u64 = 512 * 1024 * 1024;
 /// Duyurulan tek dosya için makul üst sınır (1 TiB).
 const MAX_FILE_SIZE: u64 = 1024 * 1024 * 1024 * 1024;
 const MAX_FILES_PER_SEND: usize = 1000;
@@ -97,6 +102,8 @@ pub struct ShareEnv {
     pub notifier: Arc<dyn ShareNotifier>,
     /// Ayarlardaki indirme klasörü boşsa kullanılacak klasör (işletim sisteminin İndirilenler'i).
     pub default_download_dir: PathBuf,
+    /// Uygulamanın kendi veri klasörü: buradaki dosyalar webview'dan gönderilemez.
+    pub data_dir: PathBuf,
     /// Gönderici yük dinleyicisi port aralığı (varsayılan 1739–1764).
     pub payload_ports: (u16, u16),
 }
@@ -449,7 +456,7 @@ impl ShareService {
         device_id: &str,
         paths: Vec<String>,
     ) -> Result<Vec<String>, String> {
-        self.env().ok_or("paylaşım hazır değil")?;
+        let data_dir = self.env().ok_or("paylaşım hazır değil")?.data_dir.clone();
         let handle = self
             .st()
             .handles
@@ -465,6 +472,12 @@ impl ShareService {
             let pb = PathBuf::from(&p);
             if !pb.is_absolute() {
                 log::warn!("göreli yol yok sayıldı");
+                continue;
+            }
+            // GÜVENLİK: sembolik bağlar ve hassas konumlar (.ssh, anahtarlıklar, uygulama verisi...)
+            // webview'dan gelen yollarla bile gönderilmez.
+            if !safety::send_path_allowed(&pb, &data_dir) {
+                log::warn!("izin verilmeyen yol yok sayıldı");
                 continue;
             }
             match std::fs::metadata(&pb) {
@@ -675,7 +688,10 @@ impl ShareService {
         let env = self.env().ok_or_else(|| Fail::Other("ortam yok".into()))?;
         let configured = env.settings.get().download_dir;
         let mut dir = PathBuf::from(configured.trim());
-        if configured.trim().is_empty() || !dir.is_absolute() {
+        if configured.trim().is_empty()
+            || !dir.is_absolute()
+            || !safety::download_dir_allowed(configured.trim())
+        {
             dir = env.default_download_dir.clone();
         }
         std::fs::create_dir_all(&dir).map_err(disk_fail)?;
@@ -728,6 +744,20 @@ impl ShareService {
     ) -> Result<(PathBuf, u64), Fail> {
         let env = self.env().ok_or_else(|| Fail::Other("ortam yok".into()))?;
         let dir = self.download_dir()?;
+        // Bilinen boyut için disk alanı denetimi (yetersizse hiç bağlanma).
+        if let Some(n) = job.size.filter(|n| *n > 0) {
+            let d = dir.clone();
+            let free = tokio::task::spawn_blocking(move || safety::free_space(&d))
+                .await
+                .ok()
+                .flatten();
+            if free.is_some_and(|f| n.saturating_add(FREE_SPACE_MARGIN) > f) {
+                return Err(disk_fail(io::Error::new(
+                    io::ErrorKind::StorageFull,
+                    "indirme birimi yetersiz boş alan",
+                )));
+            }
+        }
         let part = dir.join(format!("tatar-{}.part", job.id));
         // Taşıma sırasında güvenli olması için `.part` yolu da klasörün içinde olmalı.
         let part = ensure_inside(&dir, &part).map_err(disk_fail)?;
@@ -797,6 +827,12 @@ impl ShareService {
         }
         let final_path = finalize_no_clobber(&part, &dir, &job.name).map_err(disk_fail)?;
         *part_out = None;
+        // İşletim sistemi "internetten indirildi" uyarısı versin (açmadan önce).
+        let marked = final_path.clone();
+        let res = tokio::task::spawn_blocking(move || safety::mark_downloaded(&marked)).await;
+        if !matches!(res, Ok(Ok(()))) {
+            log::warn!("alınan dosya karantina/bölge işaretiyle damgalanamadı");
+        }
         Ok((final_path, got))
     }
 
@@ -904,6 +940,21 @@ impl ShareService {
         }
         if port.is_none() && size != Some(0) {
             log::warn!("yük portu olmayan dosya duyurusu atıldı");
+            return;
+        }
+        // Kaynak tüketimi: cihaz başına bekleyen + süren gelen aktarım sayısı sınırlıdır.
+        let in_flight = self
+            .st()
+            .transfers
+            .iter()
+            .filter(|r| {
+                r.view.device_id == device.id
+                    && r.view.direction == "receive"
+                    && r.view.state == "active"
+            })
+            .count();
+        if in_flight >= MAX_INCOMING_PER_DEVICE {
+            log::warn!("gelen aktarım sınırı aşıldı ({in_flight}), duyuru atıldı");
             return;
         }
         // GÜVENLİK: ağdan gelen ad her zaman temizlenir (CLAUDE.md §4 kural 3).
@@ -1137,6 +1188,7 @@ mod tests {
             sink: sink.clone(),
             notifier: notes.clone(),
             default_download_dir: downloads.clone(),
+            data_dir: dir.join("veri-yok"),
             payload_ports: payload,
         });
         Inst {

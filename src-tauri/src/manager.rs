@@ -6,7 +6,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
@@ -21,7 +21,9 @@ use crate::protocol::identity::{
     Identity, MAX_TCP_PORT, MIN_TCP_PORT, PROTOCOL_VERSION, default_device_name,
     default_device_type, filter_device_name,
 };
-use crate::protocol::link::{self, Established, HandshakeCtx, HsResult, LinkEvent, LinkIo};
+use crate::protocol::link::{
+    self, Established, HandshakeCtx, HsResult, LINK_EVENT_QUEUE, LinkEvent, LinkIo,
+};
 use crate::protocol::packet::{NetworkPacket, TYPE_PAIR};
 use crate::protocol::pairing::{
     self, Disposition, FailReason, PAIR_TIMEOUT_SECS, PairAction, PairInput, PairState, classify,
@@ -44,6 +46,129 @@ fn backoff_delay(fails: u32) -> Duration {
     (BACKOFF_BASE * mult).min(BACKOFF_MAX)
 }
 const MAX_PARALLEL_HANDSHAKES: usize = 16;
+/// Aynı kaynak IP'den aynı anda en çok bu kadar el sıkışma (tek IP tüm 16 yuvayı dolduramasın).
+const MAX_HANDSHAKES_PER_IP: usize = 3;
+/// Aynı kaynak IP'den en çok bu kadar eşleşmemiş bağlantı.
+const MAX_UNPAIRED_PER_IP: usize = 3;
+/// Eşleşmemiş bağlantıda bu kadar eşleştirme dışı paketten sonra bağlantı kapatılır.
+const MAX_DROPPED_UNPAIRED: u32 = 20;
+/// Reddedilen/zaman aşımına uğrayan gelen eşleştirme isteğinden sonra aynı cihazdan yenisi için bekleme.
+const PAIR_COOLDOWN: Duration = Duration::from_secs(30);
+
+/// Eşleştirme sürüyor mu (kullanıcı kodu görüyor ya da karşı tarafın yanıtı bekleniyor)?
+fn pairing_active(p: PairState) -> bool {
+    matches!(
+        p,
+        PairState::Requested { .. } | PairState::RequestedByPeer { .. }
+    )
+}
+
+/// Eşleşmemiş bağlantı özeti (kabul kararı için).
+struct UnpairedInfo {
+    id: String,
+    ip: IpAddr,
+    since: Instant,
+    /// Eşleştirme sürmüyor: gerekirse çıkarılabilir.
+    idle: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Admission {
+    Accept,
+    /// Yer açmak için bu cihazın bağlantısını kapat, sonra kabul et.
+    Evict(String),
+    Reject,
+}
+
+/// Yeni bir eşleşmemiş bağlantı için karar: kaynak IP başına ve genel sınır. Sınır dolunca
+/// eşleştirmesi sürmeyen EN ESKİ bağlantı çıkarılır (boştaki saldırgan gerçek telefonu engellemesin).
+fn admit_unpaired(
+    links: &[UnpairedInfo],
+    new_ip: IpAddr,
+    per_ip: usize,
+    global: usize,
+) -> Admission {
+    let oldest_idle = |pred: &dyn Fn(&UnpairedInfo) -> bool| {
+        links
+            .iter()
+            .filter(|l| l.idle && pred(l))
+            .min_by_key(|l| l.since)
+            .map(|l| l.id.clone())
+    };
+    let same_ip = links.iter().filter(|l| l.ip == new_ip).count();
+    let full = if same_ip >= per_ip {
+        Some(oldest_idle(&|l| l.ip == new_ip))
+    } else if links.len() >= global {
+        Some(oldest_idle(&|_| true))
+    } else {
+        None
+    };
+    match full {
+        None => Admission::Accept,
+        Some(Some(id)) => Admission::Evict(id),
+        Some(None) => Admission::Reject,
+    }
+}
+
+/// Kaynak IP başına eşzamanlı el sıkışma sayacı; koruyucu düşünce sayaç azalır.
+#[derive(Default)]
+struct IpGate(Mutex<HashMap<IpAddr, usize>>);
+
+struct IpGuard {
+    gate: Arc<IpGate>,
+    ip: IpAddr,
+}
+
+impl IpGate {
+    fn enter(self: &Arc<Self>, ip: IpAddr, limit: usize) -> Option<IpGuard> {
+        let mut m = self.0.lock().unwrap();
+        let n = m.entry(ip).or_insert(0);
+        if *n >= limit {
+            return None;
+        }
+        *n += 1;
+        Some(IpGuard {
+            gate: self.clone(),
+            ip,
+        })
+    }
+}
+
+impl Drop for IpGuard {
+    fn drop(&mut self) {
+        let mut m = self.gate.0.lock().unwrap();
+        if let Some(n) = m.get_mut(&self.ip) {
+            *n = n.saturating_sub(1);
+            if *n == 0 {
+                m.remove(&self.ip);
+            }
+        }
+    }
+}
+
+/// Cihaz başına eşleştirme isteği bekleme süresi.
+#[derive(Default)]
+struct Cooldowns(HashMap<String, Instant>);
+
+impl Cooldowns {
+    fn set(&mut self, id: &str, now: Instant) {
+        if self.0.len() >= 256 {
+            self.0.retain(|_, t| *t > now);
+        }
+        if self.0.len() < 1024 {
+            self.0.insert(id.to_string(), now + PAIR_COOLDOWN);
+        }
+    }
+    fn active(&self, id: &str, now: Instant) -> bool {
+        self.0.get(id).is_some_and(|t| *t > now)
+    }
+}
+
+/// Giden bağlantı anahtarı: (deviceId, ip). Başarısızlık beklemesi tek bir sahte IP yüzünden
+/// aynı cihazın gerçek adresini de kilitlemesin.
+fn peer_key(id: &str, ip: IpAddr) -> String {
+    format!("{id}@{ip}")
+}
 
 pub trait EventSink: Send + Sync + 'static {
     fn emit(&self, event: &str, payload: Value);
@@ -278,8 +403,15 @@ struct Live {
     identity: Identity,
     peer_incoming: Arc<Vec<String>>,
     paired_flag: Arc<AtomicBool>,
-    /// Eşleşmemiş cihaza "eşleşmedik" cevabını bu bağlantıda bir kez ver.
+    /// Eşleşmemiş cihaza "eşleşmedik" cevabını bu bağlantıda bir kez ver (ve uyarıyı bir kez logla).
     warned_unpaired: bool,
+    /// Bu bağlantıda atılan eşleştirme dışı paket sayısı (eşleşmemişken sınırı var).
+    dropped: u32,
+    /// Eşin gerçek uzak adresi (el sıkışmada soketten kaydedildi).
+    remote: SocketAddr,
+    /// Eşin doğrulanmış TCP dinleme portu (biliniyorsa).
+    listen_port: Option<u16>,
+    since: Instant,
 }
 
 struct Dev {
@@ -305,7 +437,9 @@ struct Core {
     sink: Arc<dyn EventSink>,
     registry: Registry,
     tx: mpsc::UnboundedSender<Cmd>,
-    link_tx: mpsc::UnboundedSender<LinkEvent>,
+    link_tx: mpsc::Sender<LinkEvent>,
+    allow_loopback: bool,
+    cooldowns: Cooldowns,
     tcp_port: u16,
     devs: HashMap<String, Dev>,
     connecting: HashSet<String>,
@@ -354,7 +488,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
     log::info!("TCP dinleyici {tcp_port} portunda");
 
     let (tx, rx) = mpsc::unbounded_channel();
-    let (link_tx, link_rx) = mpsc::unbounded_channel();
+    let (link_tx, link_rx) = mpsc::channel(LINK_EVENT_QUEUE);
     let stats = Arc::new(NetStats::default());
 
     let handle = ManagerHandle {
@@ -407,6 +541,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
     // Gelen TCP bağlantıları.
     {
         let sem = Arc::new(Semaphore::new(MAX_PARALLEL_HANDSHAKES));
+        let ip_gate = Arc::new(IpGate::default());
         let (local, trusted, identity, tx, stats) = (
             local.clone(),
             trusted.clone(),
@@ -425,6 +560,12 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
                     }
                 };
                 stats.mark_tcp_in();
+                let Some(ip_guard) =
+                    ip_gate.enter(discovery::normalize_ip(addr.ip()), MAX_HANDSHAKES_PER_IP)
+                else {
+                    log::warn!("aynı IP'den çok fazla eşzamanlı el sıkışma, bağlantı atıldı");
+                    continue;
+                };
                 let Ok(permit) = sem.clone().try_acquire_owned() else {
                     log::warn!("çok fazla eşzamanlı el sıkışma, bağlantı atıldı");
                     continue;
@@ -438,6 +579,7 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
                 tokio::spawn(async move {
                     let result = link::accept_in(&ctx, stream, addr).await;
                     drop(permit);
+                    drop(ip_guard);
                     let _ = tx.send(Cmd::Handshake {
                         key: None,
                         addr,
@@ -491,6 +633,8 @@ pub async fn start(cfg: ManagerConfig, sink: Arc<dyn EventSink>) -> Result<Manag
         registry: cfg.registry,
         tx,
         link_tx,
+        allow_loopback: cfg.allow_loopback,
+        cooldowns: Cooldowns::default(),
         tcp_port,
         devs,
         connecting: HashSet::new(),
@@ -520,7 +664,7 @@ impl Core {
     async fn run(
         mut self,
         mut rx: mpsc::UnboundedReceiver<Cmd>,
-        mut link_rx: mpsc::UnboundedReceiver<LinkEvent>,
+        mut link_rx: mpsc::Receiver<LinkEvent>,
     ) {
         let mut ticker = tokio::time::interval(Duration::from_secs(1));
         let mut tick: u64 = 0;
@@ -564,10 +708,14 @@ impl Core {
                 self.finish_change(&id);
             }
             Cmd::RejectPair(id) => {
+                let state = self.devs.get(&id).map(|d| d.pair);
                 if matches!(
-                    self.devs.get(&id).map(|d| d.pair),
+                    state,
                     Some(PairState::Requested { .. } | PairState::RequestedByPeer { .. })
                 ) {
+                    if matches!(state, Some(PairState::RequestedByPeer { .. })) {
+                        self.cooldowns.set(&id, Instant::now());
+                    }
                     self.apply_pair(&id, PairInput::UserReject);
                 }
                 self.finish_change(&id);
@@ -776,8 +924,9 @@ impl Core {
                     device_type: d.device_type.clone(),
                     cert: link.cert.clone(),
                     protocol_version: link.identity.protocol_version,
-                    last_ip: d.ip.map(|i| i.to_string()),
-                    last_port: d.port,
+                    // Yalnızca doğrulanmış bağlantının gerçek adresi (keşif duyurusu değil).
+                    last_ip: Some(link.remote.ip().to_string()),
+                    last_port: link.listen_port,
                     last_seen: Some(now_ms()),
                 });
                 link.paired_flag.store(true, Ordering::Relaxed);
@@ -831,35 +980,75 @@ impl Core {
             name: d.name.clone(),
             peer_incoming: l.peer_incoming.clone(),
             tx: l.io.tx.clone(),
-            peer_ip: d.ip,
+            peer_ip: Some(discovery::normalize_ip(l.remote.ip())),
             peer_cert: Arc::new(l.cert.clone()),
         })
     }
 
-    fn unpaired_link_count(&self) -> usize {
+    fn unpaired_infos(&self) -> Vec<UnpairedInfo> {
         self.devs
             .values()
-            .filter(|d| d.link.is_some() && d.pair != PairState::Paired)
-            .count()
+            .filter(|d| d.pair != PairState::Paired)
+            .filter_map(|d| {
+                let l = d.link.as_ref()?;
+                Some(UnpairedInfo {
+                    id: d.id.clone(),
+                    ip: discovery::normalize_ip(l.remote.ip()),
+                    since: l.since,
+                    idle: !pairing_active(d.pair),
+                })
+            })
+            .collect()
+    }
+
+    /// Eşleşmemiş cihazın bağlantısını kapatır (yer açmak için); cihaz kaydı gerekmiyorsa silinir.
+    fn evict_unpaired(&mut self, id: &str) {
+        if let Some(d) = self.devs.get_mut(id)
+            && let Some(l) = d.link.take()
+        {
+            l.io.cancel.cancel();
+            log::info!("eşleşmemiş bağlantı sınırı: boştaki en eski bağlantı kapatıldı");
+        }
+        self.gc(id);
     }
 
     fn on_established(&mut self, est: Established) {
         let id = est.identity.device_id.clone();
+        let trusted = self.trusted.is_trusted(&id);
+        let remote_ip = discovery::normalize_ip(est.addr.ip());
         match self.devs.get(&id).and_then(|d| d.link.as_ref()) {
-            // Aynı cihaz, farklı sertifika: YENİ bağlantıyı kapat.
             Some(old) if old.cert != est.cert_der => {
-                log::warn!(
-                    "mevcut bağlantıdan farklı sertifika, yeni bağlantı kapatıldı: {}",
+                let d = &self.devs[&id];
+                // Eşleşmiş cihaz (sertifika sabit) ya da eşleştirmesi süren cihaz: ESKİ kalır.
+                if trusted || d.pair == PairState::Paired || pairing_active(d.pair) {
+                    log::warn!(
+                        "mevcut bağlantıdan farklı sertifika, yeni bağlantı kapatıldı: {}",
+                        short(&id)
+                    );
+                    return;
+                }
+                // Eşleşmemiş ve boşta: yeni bağlantı kazanır (ilk gelen kimliği kilitleyemesin).
+                log::info!(
+                    "eşleşmemiş cihaz yeni sertifikayla bağlandı, eski bağlantı değiştirildi: {}",
                     short(&id)
                 );
-                return;
             }
             Some(_) => {}
             None => {
-                if !self.trusted.is_trusted(&id) && self.unpaired_link_count() >= MAX_UNPAIRED_LINKS
-                {
-                    log::warn!("eşleşmemiş bağlantı sınırı doldu, bağlantı atıldı");
-                    return;
+                if !trusted {
+                    match admit_unpaired(
+                        &self.unpaired_infos(),
+                        remote_ip,
+                        MAX_UNPAIRED_PER_IP,
+                        MAX_UNPAIRED_LINKS,
+                    ) {
+                        Admission::Accept => {}
+                        Admission::Evict(victim) => self.evict_unpaired(&victim),
+                        Admission::Reject => {
+                            log::warn!("eşleşmemiş bağlantı sınırı doldu, bağlantı atıldı");
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -868,7 +1057,9 @@ impl Core {
         let trusted_dev = self.trusted.get(&id);
         let peer = est.identity.clone();
         let cert = est.cert_der.clone();
-        let ip = est.addr.ip();
+        let remote = est.addr;
+        let listen_port = est.listen_port;
+        let ip = remote_ip;
 
         let dev = self.devs.entry(id.clone()).or_insert_with(|| Dev {
             id: id.clone(),
@@ -893,7 +1084,11 @@ impl Core {
         dev.name = peer.device_name.clone();
         dev.device_type = peer.device_type.clone();
         dev.protocol_version = peer.protocol_version;
+        // Adres yalnızca doğrulanmış bağlantıdan (soketin gerçek uzak adresi) güncellenir.
         dev.ip = Some(ip);
+        if let Some(p) = listen_port {
+            dev.port = Some(p);
+        }
         dev.last_seen = Some(now_ms());
         let paired_flag = Arc::new(AtomicBool::new(dev.pair == PairState::Paired));
         let io = link::spawn_link(
@@ -911,13 +1106,17 @@ impl Core {
             identity: peer,
             paired_flag,
             warned_unpaired: false,
+            dropped: 0,
+            remote,
+            listen_port,
+            since: Instant::now(),
         });
         let paired = dev.pair == PairState::Paired;
         if paired {
             self.trusted.touch(
                 &id,
                 Some(ip.to_string()),
-                dev.port,
+                listen_port,
                 Some(&dev.name.clone()),
                 now_ms(),
             );
@@ -981,9 +1180,21 @@ impl Core {
         match classify(paired, &packet.packet_type) {
             Disposition::Pairing => {
                 let input = match packet.body_bool("pair") {
-                    Some(true) => PairInput::PeerPair {
-                        timestamp: packet.body_i64("timestamp"),
-                    },
+                    Some(true) => {
+                        // Yeni gelen istek (eşleşmemiş cihaz): aynı anda tek bir istek kullanıcıya
+                        // gösterilir; sonrakiler ve bekleme süresindeki cihazlar reddedilir.
+                        let fresh = self
+                            .devs
+                            .get(id)
+                            .is_some_and(|d| d.pair == PairState::NotPaired);
+                        if fresh && !self.admit_incoming_pair(id) {
+                            self.send_pair(id, json!({"pair": false}));
+                            return;
+                        }
+                        PairInput::PeerPair {
+                            timestamp: packet.body_i64("timestamp"),
+                        }
+                    }
                     Some(false) => PairInput::PeerUnpair,
                     None => {
                         log::warn!("pair alanı olmayan eşleştirme paketi atıldı");
@@ -1005,12 +1216,8 @@ impl Core {
                 }
             }
             Disposition::DropUnpaired => {
-                log::warn!(
-                    "eşleşmemiş cihazdan paket atıldı: {} ({})",
-                    crate::diag::clean(&packet.packet_type),
-                    short(id)
-                );
                 // Karşı taraf bizi eşleşmiş sanıyor: durumunu düzeltmesi için bir kez "eşleşmedik" de.
+                // Uyarı da yalnızca bu ilk seferde loglanır (sel durumunda log şişmesin).
                 let first = self
                     .devs
                     .get_mut(id)
@@ -1018,13 +1225,60 @@ impl Core {
                     .map(|l| !std::mem::replace(&mut l.warned_unpaired, true))
                     .unwrap_or(false);
                 if first {
+                    log::warn!(
+                        "eşleşmemiş cihazdan paket atıldı: {} ({})",
+                        crate::diag::clean(&packet.packet_type),
+                        short(id)
+                    );
                     self.send_pair(id, json!({"pair": false}));
                 }
+                self.note_dropped(id);
             }
             Disposition::DropUnexpected => {
                 log::warn!("beklenmeyen kimlik paketi atıldı ({})", short(id));
+                if !paired {
+                    self.note_dropped(id);
+                }
             }
         }
+    }
+
+    /// Eşleşmemiş bağlantıda atılan paketi sayar; sınır aşılırsa bağlantıyı kapatır.
+    fn note_dropped(&mut self, id: &str) {
+        let Some(l) = self.devs.get_mut(id).and_then(|d| d.link.as_mut()) else {
+            return;
+        };
+        l.dropped = l.dropped.saturating_add(1);
+        if l.dropped == MAX_DROPPED_UNPAIRED {
+            log::warn!(
+                "eşleşmemiş bağlantıda çok fazla geçersiz paket, kapatılıyor ({})",
+                short(id)
+            );
+            l.io.cancel.cancel();
+        }
+    }
+
+    /// Yeni bir gelen eşleştirme isteği kullanıcıya gösterilebilir mi?
+    fn admit_incoming_pair(&self, id: &str) -> bool {
+        if self.cooldowns.active(id, Instant::now()) {
+            log::info!(
+                "eşleştirme isteği bekleme süresinde, reddedildi ({})",
+                short(id)
+            );
+            return false;
+        }
+        if self
+            .devs
+            .values()
+            .any(|d| d.id != id && matches!(d.pair, PairState::RequestedByPeer { .. }))
+        {
+            log::info!(
+                "başka bir eşleştirme isteği bekliyor, reddedildi ({})",
+                short(id)
+            );
+            return false;
+        }
+        true
     }
 
     fn send_to(&mut self, id: &str, packet: NetworkPacket) -> Result<(), String> {
@@ -1071,6 +1325,9 @@ impl Core {
         if self.backoff.len() > 256 {
             self.backoff.retain(|_, (_, until)| *until > now);
         }
+        if self.backoff.len() >= 1024 && !self.backoff.contains_key(key) {
+            return; // sahte keşif seliyle bellek şişmesin
+        }
         let fails = self
             .backoff
             .get(key)
@@ -1113,37 +1370,39 @@ impl Core {
         if d.device_id == self.local.device_id || d.protocol_version < PROTOCOL_VERSION {
             return;
         }
+        // Doğrulanmamış duyuru: yalnızca yerel ağ adreslerine bağlanırız (genel/loopback/multicast değil).
+        if !discovery::is_acceptable_peer_ip(d.ip, self.allow_loopback) {
+            log::debug!("yerel ağ dışı keşif adresi yok sayıldı");
+            return;
+        }
+        let ip = discovery::normalize_ip(d.ip);
         let trusted = self.trusted.is_trusted(&d.device_id);
         if let Some(dev) = self.devs.get_mut(&d.device_id) {
-            dev.ip = Some(d.ip);
-            dev.port = Some(d.tcp_port);
-        }
-        if trusted {
-            self.trusted.touch(
-                &d.device_id,
-                Some(d.ip.to_string()),
-                Some(d.tcp_port),
-                None,
-                now_ms(),
-            );
-            if !self.settings.get().auto_connect {
-                return;
+            // Canlı bağlantı varken duyuru adresi değiştiremez. Kalıcı depoya da ASLA yazılmaz:
+            // yalnızca doğrulanmış bağlantı (on_established) yazar.
+            if dev.link.is_none() {
+                dev.ip = Some(ip);
+                dev.port = Some(d.tcp_port);
             }
         }
+        if trusted && !self.settings.get().auto_connect {
+            return;
+        }
+        let prefix = format!("{}@", d.device_id);
         if self
             .devs
             .get(&d.device_id)
             .is_some_and(|x| x.link.is_some())
-            || self.connecting.contains(&d.device_id)
+            || self.connecting.iter().any(|k| k.starts_with(&prefix))
         {
             return;
         }
-        if !self.allow(&format!("ip:{}", d.ip)) || !self.allow(&format!("id:{}", d.device_id)) {
+        if !self.allow(&format!("ip:{ip}")) || !self.allow(&format!("id:{}", d.device_id)) {
             return;
         }
         self.spawn_connect(
-            d.device_id.clone(),
-            SocketAddr::new(d.ip, d.tcp_port),
+            peer_key(&d.device_id, ip),
+            SocketAddr::new(ip, d.tcp_port),
             Some((d.device_id, d.protocol_version)),
         );
     }
@@ -1165,7 +1424,15 @@ impl Core {
         tokio::task::spawn_blocking(move || discovery::broadcast_blocking(&data, port));
     }
 
+    /// Keşiften/kayıttan gelen adrese kimlik gönderir; yalnızca yerel ağ adreslerine.
     fn unicast_identity(&self, ip: IpAddr) {
+        if discovery::is_acceptable_peer_ip(ip, self.allow_loopback) {
+            self.unicast_identity_any(ip);
+        }
+    }
+
+    /// Adres denetimi olmadan gönderir (yalnızca kullanıcının elle girdiği IP için).
+    fn unicast_identity_any(&self, ip: IpAddr) {
         if !self.enable_udp {
             return;
         }
@@ -1177,7 +1444,8 @@ impl Core {
     fn add_by_ip(&mut self, ip: IpAddr) {
         let ip = discovery::normalize_ip(ip);
         // Telefon bize bağlansın (UDP) ve biz de doğrudan bağlanmayı deneyelim.
-        self.unicast_identity(ip);
+        // Kullanıcının kendi isteği: adres sınırlaması uygulanmaz.
+        self.unicast_identity_any(ip);
         // Kullanıcı elle istedi: bekleme süresini atla.
         self.backoff.remove(&format!("ip:{ip}"));
         if self.allow(&format!("ip:{ip}")) {
@@ -1204,14 +1472,19 @@ impl Core {
             })
             .collect();
         for (id, ip, port, proto) in targets {
-            if self.connecting.contains(&id)
+            let prefix = format!("{id}@");
+            if self.connecting.iter().any(|k| k.starts_with(&prefix))
                 || !self.allow(&format!("ip:{ip}"))
                 || !self.allow(&format!("id:{id}"))
             {
                 continue;
             }
             self.unicast_identity(ip);
-            self.spawn_connect(id.clone(), SocketAddr::new(ip, port), Some((id, proto)));
+            self.spawn_connect(
+                peer_key(&id, ip),
+                SocketAddr::new(ip, port),
+                Some((id, proto)),
+            );
         }
     }
 
@@ -1233,6 +1506,9 @@ impl Core {
         for id in due {
             if let Some(d) = self.devs.get_mut(&id) {
                 d.deadline = None;
+                if matches!(d.pair, PairState::RequestedByPeer { .. }) {
+                    self.cooldowns.set(&id, now);
+                }
             }
             self.apply_pair(&id, PairInput::Timeout);
             self.finish_change(&id);
@@ -1281,6 +1557,90 @@ mod tests {
         assert_eq!(backoff_delay(5), Duration::from_secs(32));
         assert_eq!(backoff_delay(6), Duration::from_secs(60));
         assert_eq!(backoff_delay(u32::MAX), Duration::from_secs(60));
+    }
+
+    fn info(id: &str, ip: &str, age_s: u64, idle: bool, base: Instant) -> UnpairedInfo {
+        UnpairedInfo {
+            id: id.into(),
+            ip: ip.parse().unwrap(),
+            since: base + Duration::from_secs(age_s),
+            idle,
+        }
+    }
+
+    #[test]
+    fn admission_per_ip_and_global() {
+        let base = Instant::now();
+        let ip: IpAddr = "192.168.1.5".parse().unwrap();
+        // Sınır altında: kabul.
+        let two = vec![
+            info("a", "192.168.1.5", 1, true, base),
+            info("b", "192.168.1.5", 2, true, base),
+        ];
+        assert_eq!(admit_unpaired(&two, ip, 3, 42), Admission::Accept);
+        // IP başına dolu: o IP'nin boştaki en eskisi çıkar (a, tüm listede daha yeni biri olsa da).
+        let full = vec![
+            info("c", "192.168.1.5", 3, true, base),
+            info("a", "192.168.1.5", 1, true, base),
+            info("b", "192.168.1.5", 2, false, base),
+            info("z", "192.168.1.9", 0, true, base),
+        ];
+        assert_eq!(
+            admit_unpaired(&full, ip, 3, 42),
+            Admission::Evict("a".into())
+        );
+        // Hepsi eşleştirme sürerken: reddet.
+        let busy = vec![
+            info("a", "192.168.1.5", 1, false, base),
+            info("b", "192.168.1.5", 2, false, base),
+            info("c", "192.168.1.5", 3, false, base),
+        ];
+        assert_eq!(admit_unpaired(&busy, ip, 3, 42), Admission::Reject);
+        // Genel sınır: başka IP'lerden dolu; en eski boşta olan çıkar, eşleştirmesi süren korunur.
+        let other: IpAddr = "10.0.0.1".parse().unwrap();
+        let global = vec![
+            info("p", "192.168.1.2", 0, false, base),
+            info("q", "192.168.1.3", 5, true, base),
+            info("r", "192.168.1.4", 4, true, base),
+        ];
+        assert_eq!(
+            admit_unpaired(&global, other, 3, 3),
+            Admission::Evict("r".into())
+        );
+        let global_busy = vec![info("p", "192.168.1.2", 0, false, base)];
+        assert_eq!(admit_unpaired(&global_busy, other, 3, 1), Admission::Reject);
+    }
+
+    #[test]
+    fn ip_gate_limits_and_releases() {
+        let gate = Arc::new(IpGate::default());
+        let ip: IpAddr = "192.168.1.5".parse().unwrap();
+        let other: IpAddr = "192.168.1.6".parse().unwrap();
+        let g1 = gate.enter(ip, 3).unwrap();
+        let _g2 = gate.enter(ip, 3).unwrap();
+        let _g3 = gate.enter(ip, 3).unwrap();
+        assert!(gate.enter(ip, 3).is_none());
+        assert!(gate.enter(other, 3).is_some());
+        drop(g1);
+        assert!(gate.enter(ip, 3).is_some());
+    }
+
+    #[test]
+    fn cooldown_expires_per_device() {
+        let mut c = Cooldowns::default();
+        let t0 = Instant::now();
+        assert!(!c.active("a", t0));
+        c.set("a", t0);
+        assert!(c.active("a", t0 + Duration::from_secs(29)));
+        assert!(!c.active("a", t0 + PAIR_COOLDOWN + Duration::from_millis(1)));
+        assert!(!c.active("b", t0));
+    }
+
+    #[test]
+    fn backoff_key_includes_ip() {
+        let a: IpAddr = "192.168.1.5".parse().unwrap();
+        let b: IpAddr = "192.168.1.6".parse().unwrap();
+        assert_ne!(peer_key("id", a), peer_key("id", b));
     }
 
     use crate::plugins::Plugin;

@@ -76,6 +76,12 @@ pub fn connect_should_apply(remote_ts: i64, own_ts: i64) -> bool {
     remote_ts != 0 && remote_ts >= own_ts
 }
 
+/// Karşıdan gelen `clipboard.connect` zaman damgasını (ms) şimdi + 60 sn ile sınırlar:
+/// geleceğe uzanan bir damga, sonraki meşru güncellemeleri sonsuza dek "eski" gösterirdi.
+pub fn clamp_remote_ts(remote_ts: i64, now: i64) -> i64 {
+    remote_ts.min(now.saturating_add(60_000))
+}
+
 /// Yerel pano değişince ne yapılacağı.
 #[derive(Debug, PartialEq, Eq)]
 pub enum LocalAction {
@@ -275,14 +281,22 @@ impl ClipboardPlugin {
             if !self.mode().watches() {
                 // İzleme kapalıyken biriken değişiklik, açılınca gönderilmesin.
                 last = token;
+                // Kapalıyken bekleyen yankı kaydı bayatlamasın.
+                self.state.lock().unwrap().echo = EchoGuard::default();
                 continue;
             }
             if token == last {
                 continue;
             }
             last = token;
+            // Yarış: gizli denetimi ile okuma arasında pano değişebilir (ör. şifre kopyalanır).
+            // Okumadan sonra jeton değiştiyse sonucu at; sonraki tur yeni değişikliği işler.
             let concealed = native::is_concealed();
             let text = if concealed { None } else { read_text() };
+            if native::change_token() != token {
+                log::debug!("pano okunurken değişti, atlandı");
+                continue;
+            }
             self.on_local_change(concealed, text);
         }
     }
@@ -335,10 +349,15 @@ impl ClipboardPlugin {
         let text = match text {
             Some(t) => t,
             None => {
+                let token = native::change_token();
                 if native::is_concealed() {
                     return Err("pano içeriği gizli işaretli, gönderilmez".into());
                 }
-                read_text().ok_or("pano boş ya da metin değil")?
+                let t = read_text().ok_or("pano boş ya da metin değil")?;
+                if native::change_token() != token {
+                    return Err("pano okunurken değişti, tekrar deneyin".into());
+                }
+                t
             }
         };
         if text.is_empty() || text.len() > MAX_TEXT_BYTES {
@@ -378,6 +397,10 @@ impl ClipboardPlugin {
     }
 
     fn apply_remote(self: &Arc<Self>, text: String, ts: i64) {
+        // Kapalıyken pano ve geçmişe dokunulmaz; yankı kaydı da bırakılmaz.
+        if self.mode() == Mode::Off {
+            return;
+        }
         if text.is_empty() || text.len() > MAX_TEXT_BYTES {
             log::debug!("gelen pano içeriği yok sayıldı (boş ya da çok büyük)");
             return;
@@ -432,7 +455,7 @@ impl Plugin for ClipboardPluginHandle {
                 }
             }
             TYPE_CLIPBOARD_CONNECT if mode.uses_connect() => {
-                let ts = packet.body_i64("timestamp").unwrap_or(0);
+                let ts = clamp_remote_ts(packet.body_i64("timestamp").unwrap_or(0), now_ms());
                 let own = p.state.lock().unwrap().update_ts;
                 if connect_should_apply(ts, own)
                     && let Some(c) = packet.body_str("content")
@@ -454,10 +477,15 @@ impl Plugin for ClipboardPluginHandle {
             return;
         }
         let ts = p.state.lock().unwrap().update_ts;
+        let token = native::change_token();
         if ts == 0 || native::is_concealed() {
             return;
         }
-        if let Some(text) = read_text().filter(|t| !t.is_empty() && t.len() <= MAX_TEXT_BYTES) {
+        let text = read_text().filter(|t| !t.is_empty() && t.len() <= MAX_TEXT_BYTES);
+        if native::change_token() != token {
+            return; // okurken değişti: gizli olabilir, gönderme
+        }
+        if let Some(text) = text {
             device.send(NetworkPacket::new(
                 TYPE_CLIPBOARD_CONNECT,
                 json!({ "timestamp": ts, "content": text }),
@@ -548,6 +576,14 @@ mod tests {
         assert_eq!(classify("HTTP://a.b"), ClipKind::Link);
         assert_eq!(classify("see https://example.com"), ClipKind::Text);
         assert_eq!(classify("merhaba"), ClipKind::Text);
+    }
+
+    #[test]
+    fn remote_timestamp_is_clamped() {
+        assert_eq!(clamp_remote_ts(1_000, 5_000), 1_000);
+        assert_eq!(clamp_remote_ts(i64::MAX, 5_000), 65_000);
+        assert_eq!(clamp_remote_ts(0, 5_000), 0);
+        assert_eq!(clamp_remote_ts(i64::MAX, i64::MAX), i64::MAX);
     }
 
     #[test]
