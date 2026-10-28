@@ -82,6 +82,13 @@ export const DEFAULT_SHORTCUTS: Record<ShortcutId, string[]> = {
   showHist: ['⇧', '⌘', 'V'],
 };
 
+/** Telefondan çalıştırılabilen, bu bilgisayarda tanımlı komut */
+export interface RunCommand {
+  id: string;
+  name: string;
+  command: string;
+}
+
 export interface Settings {
   language: LanguagePref;
   clipboardMode: ClipboardMode;
@@ -105,6 +112,8 @@ export interface Settings {
   notificationMirror: boolean;
   /** Yansıtılan bildirimde içeriği gizle (yalnızca uygulama adı) */
   notificationHideContent: boolean;
+  /** Telefondan çalıştırılabilen komutlar */
+  commands: RunCommand[];
 }
 
 export type SettingsPatch = Partial<Omit<Settings, 'shortcuts'>>;
@@ -126,6 +135,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarded: true,
   notificationMirror: true,
   notificationHideContent: false,
+  commands: [],
 };
 
 export type TroubleshootId = 'wifi' | 'localNetwork' | 'firewall' | 'discovery' | 'phoneApp';

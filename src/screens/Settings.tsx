@@ -1,14 +1,23 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useI18n, type LangPref } from '../i18n';
-import { api, DEFAULT_SHORTCUTS, SHORTCUT_IDS, type ClipboardMode, type Device, type ShortcutId } from '../lib/api';
+import { api, DEFAULT_SHORTCUTS, SHORTCUT_IDS, type ClipboardMode, type Device, type RunCommand, type ShortcutId } from '../lib/api';
 import { actions, useStore } from '../lib/store';
-import { formatShortcut, isMac } from '../lib/platform';
+import { formatShortcut, isMac, isWindows } from '../lib/platform';
 import { keysFromEvent, prettyPath } from '../lib/format';
 import { Dropdown } from '../components/Dropdown';
 import { Segmented } from '../components/Segmented';
 import { Switch } from '../components/Switch';
 import { BrandBadge } from '../components/BrandBadge';
-import { BackIcon, DeviceIcon, InfoCircleIcon, InfoMarkIcon, KeysIcon, SlidersIcon, TabletOutlineIcon } from '../components/icons';
+import {
+  BackIcon,
+  CloseIcon,
+  DeviceIcon,
+  InfoCircleIcon,
+  InfoMarkIcon,
+  KeysIcon,
+  SlidersIcon,
+  TabletOutlineIcon,
+} from '../components/icons';
 
 export type SettingsTab = 'general' | 'device' | 'shortcuts' | 'about';
 type CallAction = 'mute' | 'lower' | 'nothing';
@@ -295,12 +304,133 @@ function DeviceTab({ device, onUnpair }: { device: Device | undefined; onUnpair:
         </div>
       </div>
 
+      <CommandsSection />
+
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button type="button" className="btn btn-base lg btn-ghost-danger" onClick={() => onUnpair(device)}>
           {t('settings.unpair')}
         </button>
       </div>
     </section>
+  );
+}
+
+/* ---------- Komutlar (telefondan çalıştır) ---------- */
+
+type PresetId = '' | 'lock' | 'sleep' | 'mute';
+
+/** Platforma göre hazır komutlar. Ad i18n anahtarıdır; komut metni kabuğa verilir. */
+const PRESETS: Record<Exclude<PresetId, ''>, { nameKey: string; mac: string; win: string }> = {
+  lock: { nameKey: 'settings.presetLock', mac: 'pmset displaysleepnow', win: 'rundll32.exe user32.dll,LockWorkStation' },
+  sleep: { nameKey: 'settings.presetSleep', mac: 'pmset sleepnow', win: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0' },
+  mute: {
+    nameKey: 'settings.presetMute',
+    mac: "osascript -e 'set volume output muted true'",
+    win: 'powershell -NoProfile -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"',
+  },
+};
+
+const newCommandId = (): string => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
+function CommandsSection() {
+  const { t } = useI18n();
+  const commands = useStore((x) => x.settings.commands);
+  const [name, setName] = useState('');
+  const [text, setText] = useState('');
+  const save = (next: RunCommand[]) => void actions.updateSettings({ commands: next });
+  const add = (n: string, c: string) => {
+    if (!n.trim() || !c.trim()) return;
+    save([...commands, { id: newCommandId(), name: n.trim(), command: c.trim() }]);
+  };
+  const presetsAvailable = isMac || isWindows;
+  return (
+    <div className="group">
+      <span className="group-label">{t('settings.commandsTitle')}</span>
+      <div className="card">
+        {commands.length === 0 && (
+          <div className="setrow">
+            <span className="lbl" style={{ color: 'var(--text2)' }}>
+              {t('settings.commandsEmpty')}
+            </span>
+          </div>
+        )}
+        {commands.map((c) => (
+          <div className="setrow" key={c.id}>
+            <span className="stack">
+              <span>{c.name}</span>
+              <span className="sub" style={{ fontFamily: 'var(--mono)', overflowWrap: 'anywhere' }}>
+                {c.command}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="btn btn-base btn-ghost-danger"
+              style={{ padding: '0 9px' }}
+              aria-label={`${t('settings.commandDelete')}: ${c.name}`}
+              onClick={() => save(commands.filter((x) => x.id !== c.id))}
+            >
+              <CloseIcon size={12} />
+            </button>
+          </div>
+        ))}
+        <div className="setrow">
+          <input
+            className="field"
+            style={{ width: 130 }}
+            value={name}
+            maxLength={64}
+            placeholder={t('settings.commandName')}
+            aria-label={t('settings.commandName')}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="field"
+            style={{ flex: 1, minWidth: 0, fontFamily: 'var(--mono)', fontSize: 12 }}
+            value={text}
+            maxLength={1024}
+            placeholder={t('settings.commandText')}
+            aria-label={t('settings.commandText')}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && name.trim() && text.trim()) {
+                add(name, text);
+                setName('');
+                setText('');
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-base lg pri"
+            disabled={!name.trim() || !text.trim()}
+            onClick={() => {
+              add(name, text);
+              setName('');
+              setText('');
+            }}
+          >
+            {t('settings.commandAdd')}
+          </button>
+        </div>
+        {presetsAvailable && (
+          <div className="setrow">
+            <span className="lbl">{t('settings.commandPreset')}</span>
+            <Dropdown<PresetId>
+              label={t('settings.commandPreset')}
+              value=""
+              onChange={(v) => {
+                if (v) add(t(PRESETS[v].nameKey), isMac ? PRESETS[v].mac : PRESETS[v].win);
+              }}
+              options={[
+                { value: '', label: t('settings.commandPreset') },
+                ...(Object.keys(PRESETS) as Exclude<PresetId, ''>[]).map((id) => ({ value: id, label: t(PRESETS[id].nameKey) })),
+              ]}
+            />
+          </div>
+        )}
+      </div>
+      <span className="note">{t('settings.commandsWarn')}</span>
+    </div>
   );
 }
 

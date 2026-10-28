@@ -335,6 +335,14 @@ Android skips ongoing / foreground-service / group-summary / transport notificat
 Desktop -> phone (NOT implemented): `kdeconnect.notification.request` with `{request:true}` (re-send all current, they come back with `silent:true`, so useless for mirroring) or `{cancel:"<id>"}` (dismiss on the phone); `kdeconnect.notification.action` (`key`, `action`); `kdeconnect.notification.reply` (`requestReplyId`, `message`).
 Tatar: advertises only **incoming** `kdeconnect.notification` (Android loads the plugin because our incoming matches its outgoing, see 8); dedupes on (device, id, title+text), caps to 5 shown per 10 s, sanitises/length-limits all fields, never logs content. Settings `notificationMirror` (packets dropped when off; capability stays advertised) and `notificationHideContent`.
 Note: Android also has a separate `receivenotifications` plugin (the *phone* receiving from a desktop); irrelevant here. The phone user must grant notification-listener access to KDE Connect.
+### 6.9 `kdeconnect.runcommand`
+Verified 2026-10-28 against KDE `plugins/runcommand/runcommandplugin.cpp` + `kdeconnect_runcommand.json` and AND `plugins/runcommand/RunCommandPlugin.kt` + `CommandEntry.kt` (`master`). The phone is the "remote control", the computer is the executor.
+- **Desktop -> phone, `kdeconnect.runcommand`**: body `{"commandList": "<string>", "canAddCommand": true}`. `commandList` is a **JSON-encoded string** (not a nested object) of an object keyed by command id: `{"<id>": {"name": "...", "command": "..."}}`. Android decodes it with `Map<String, {name, command}>` and uses the map key as the command key; entries that fail to parse are skipped. Empty list = `"{}"`. `canAddCommand` (bool) makes Android show an "add command" button that sends `setup`. KDE sends the list right after the plugin connects and whenever its config changes.
+- **Phone -> desktop, `kdeconnect.runcommand.request`**, exactly one of these body keys (KDE checks in this order): `requestCommandList: true` (Android sends it when the plugin loads; reply with the list), `key: "<id>"` (run that command), `setup: true` (open the command configuration UI on the desktop), `stop: true` (terminate running commands; Tatar ignores it).
+- **Security**: the phone only names a key; the command text always comes from the desktop's own list. Tatar looks the key up in its local settings only; an unknown key is ignored and logged (without command text). KDE's `/bin/sh -c` (Windows: `cmd /C`) is mirrored. Android's UI shows the `command` text as subtitle, so the list sent to the paired phone includes it.
+- **Output packets**: KDE also sends `kdeconnect.runcommand.output` (`commandStarted`, `commandOutput` with stdout/stderr lines, `commandFinished`); Android only displays them. Tatar does **not** send them (no command output leaves the machine) and does not advertise them.
+- **Capabilities**: Android plugin: incoming `kdeconnect.runcommand`, `kdeconnect.runcommand.output`; outgoing `kdeconnect.runcommand.request`. KDE json: outgoing `kdeconnect.runcommand`, `kdeconnect.runcommand.output`; supported incoming `kdeconnect.runcommand.request`. Tatar: incoming `kdeconnect.runcommand.request`, outgoing `kdeconnect.runcommand` (enough to load the phone's plugin).
+- **[UNVERIFIED]** end-to-end behaviour with the real phone (Tatar side is unit-tested only); Windows command execution (`cmd /C`) not run on this machine.
 
 ---
 
@@ -385,6 +393,7 @@ incomingCapabilities (what we can receive):
   kdeconnect.share.request.update
   kdeconnect.telephony
   kdeconnect.notification           (6.7; mirroring)
+  kdeconnect.runcommand.request
 
 outgoingCapabilities (what we send):
   kdeconnect.ping
@@ -394,6 +403,7 @@ outgoingCapabilities (what we send):
   kdeconnect.share.request
   kdeconnect.share.request.update
   kdeconnect.battery.request        (optional; only useful for iOS peers, see 6.3)
+  kdeconnect.runcommand
 ```
 Why each (what Android shows because of it):
 | Capability | Phone effect |
@@ -404,8 +414,9 @@ Why each (what Android shows because of it):
 | in/out `kdeconnect.clipboard`, `kdeconnect.clipboard.connect` | Clipboard plugin loads: phone sends initial `clipboard.connect` and updates; "Send clipboard" button on the phone |
 | in `kdeconnect.share.request` (+`.update`), out `kdeconnect.share.request` | Share plugin loads: "Send files" button and share-sheet target on the phone; phone can send us files, text, URLs |
 | in `kdeconnect.notification` | Notifications plugin loads on the phone (needs notification-listener access) and mirrors notifications to us |
+| out `kdeconnect.runcommand`, in `kdeconnect.runcommand.request` | RunCommand plugin loads on the phone: shows our command list as buttons; tapping sends `key` (see 6.9) |
 | in `kdeconnect.telephony` | Telephony plugin loads on the phone (needs the user's phone/call-log permissions), which then sends call events to us |
-Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.mpris*`, `kdeconnect.sms.*`, `kdeconnect.runcommand*`, `kdeconnect.notification.request/.action/.reply`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
+Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.mpris*`, `kdeconnect.sms.*`, `kdeconnect.runcommand.output`, `kdeconnect.notification.request/.action/.reply`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
 iOS peers' capabilities (for tolerance): ping, share.request(+update), findmyphone.request, battery(+request), clipboard(+connect), runcommand; no telephony. So with an iPhone, no call-mute feature.
 Packet types the phone declares as incoming that Tatar can use: Android incoming: `kdeconnect.ping`, `kdeconnect.findmyphone.request`, `kdeconnect.battery`, `kdeconnect.clipboard`, `kdeconnect.clipboard.connect`, `kdeconnect.share.request`, `kdeconnect.share.request.update`, `kdeconnect.telephony.request_mute`. Before sending any packet, check the peer's `incomingCapabilities` contains the type (KDE does, Android does).
 
