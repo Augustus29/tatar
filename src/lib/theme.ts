@@ -29,6 +29,9 @@ export function useTheme(): void {
     if (forceMica) root.classList.toggle('mica', forceMica === '1');
     else void call<boolean>('window_material').then((v) => root.classList.toggle('mica', !!v));
 
+    // Windows popover'ında Acrylic etkinse köşeler Windows'un kendi yuvarlığına uyar (CSS: html.acrylic).
+    void call<boolean>('popover_acrylic').then((v) => root.classList.toggle('acrylic', !!v));
+
     return () => {
       mq.removeEventListener('change', applyDark);
       off();

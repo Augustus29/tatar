@@ -127,6 +127,12 @@ fn window_material() -> bool {
     platform::window_material_active()
 }
 
+/// Popover'da Windows Acrylic zemini etkin mi? (Etkinse köşeler Windows'un yuvarlığına uyar.)
+#[tauri::command]
+fn popover_acrylic() -> bool {
+    platform::popover_acrylic()
+}
+
 // ---- Protokol komutları (sözleşme: src/lib/api.ts) ----
 
 #[tauri::command]
@@ -683,6 +689,7 @@ pub fn run() {
             quit_app,
             reduce_transparency,
             window_material,
+            popover_acrylic,
             list_devices,
             request_pair,
             accept_pair,

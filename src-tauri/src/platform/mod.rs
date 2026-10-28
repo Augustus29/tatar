@@ -19,6 +19,18 @@ pub use win::{
     apply_window_material, reduce_transparency, watch_reduce_transparency, window_material_active,
 };
 
+/// Popover penceresinde Windows Acrylic zemini etkin mi? (Yalnızca Windows'ta olabilir.)
+pub fn popover_acrylic() -> bool {
+    #[cfg(windows)]
+    {
+        win::popover_acrylic_active()
+    }
+    #[cfg(not(windows))]
+    {
+        false
+    }
+}
+
 #[cfg(not(any(target_os = "macos", windows)))]
 mod other;
 #[cfg(not(any(target_os = "macos", windows)))]

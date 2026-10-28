@@ -16,6 +16,7 @@ use windows::core::w;
 const MICA_MIN_BUILD: u32 = 22000;
 
 static MICA_ACTIVE: AtomicBool = AtomicBool::new(false);
+static POPOVER_ACRYLIC: AtomicBool = AtomicBool::new(false);
 
 /// `HKCU\...\Personalize\EnableTransparency` değeri (yoksa `None`).
 fn read_enable_transparency() -> Option<u32> {
@@ -113,7 +114,31 @@ pub fn apply_window_material(app: &AppHandle) -> bool {
                 .is_ok()
         });
     MICA_ACTIVE.store(ok, Ordering::Relaxed);
+    apply_popover_acrylic(app, supported);
     ok
+}
+
+/// Popover'a Acrylic (arkasını bulanıklaştıran) zemin verir: saydam pencerede `backdrop-filter`
+/// yalnızca pencerenin kendi içeriğini bulandırdığından masaüstü bulanmadan görünüyordu.
+/// Yalnızca Windows 11'de; olmazsa popover eskisi gibi kalır.
+fn apply_popover_acrylic(app: &AppHandle, supported: bool) {
+    let ok = supported
+        && app
+            .get_webview_window(crate::popover::POPOVER_LABEL)
+            .is_some_and(|w| {
+                w.set_effects(
+                    EffectsBuilder::new()
+                        .effect(Effect::Acrylic)
+                        .color(tauri::window::Color(128, 128, 128, 24))
+                        .build(),
+                )
+                .is_ok()
+            });
+    POPOVER_ACRYLIC.store(ok, Ordering::Relaxed);
+}
+
+pub fn popover_acrylic_active() -> bool {
+    POPOVER_ACRYLIC.load(Ordering::Relaxed)
 }
 
 pub fn window_material_active() -> bool {

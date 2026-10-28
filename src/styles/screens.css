@@ -581,6 +581,11 @@
   background: var(--solidGlass);
   border-color: var(--sep);
 }
+.acrylic .pop-panel {
+  /* Windows 11 pencere köşeleri 8 px yuvarlaktır; Acrylic pencerenin tamamını kapladığı için
+     panel köşeleri de buna uymalı, yoksa köşelerde bulanık kare görünür. */
+  border-radius: 8px;
+}
 .pop-head {
   display: flex;
   align-items: center;
