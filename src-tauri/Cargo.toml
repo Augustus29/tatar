@@ -1,6 +1,6 @@
 [package]
 name = "tatar"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tatar: KDE Connect uyumlu masaüstü istemcisi"
 authors = ["Tatar"]
 license = "GPL-3.0-only"
