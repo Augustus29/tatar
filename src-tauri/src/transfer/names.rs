@@ -230,13 +230,15 @@ fn move_no_clobber(part: &Path, target: &Path) -> io::Result<()> {
         }
         let e = io::Error::last_os_error();
         // 80 = ERROR_FILE_EXISTS, 183 = ERROR_ALREADY_EXISTS
-        return Err(match e.raw_os_error() {
+        Err(match e.raw_os_error() {
             Some(80) | Some(183) => io::Error::from(io::ErrorKind::AlreadyExists),
             _ => e,
-        });
+        })
     }
     #[cfg(not(windows))]
-    return copy_no_clobber(part, target);
+    {
+        copy_no_clobber(part, target)
+    }
 }
 
 /// Atomik "yoksa taşı" olmayan sistemler için: `create_new` ile açılmış hedefe kopyala,
