@@ -194,7 +194,10 @@
     "github": "github.com/Augustus29/tatar",
     "diagCopy": "Copy diagnostic log",
     "diagCopied": "Diagnostic log copied to the clipboard.",
-    "diagFailed": "Could not copy the diagnostic log."
+    "diagFailed": "Could not copy the diagnostic log.",
+    "commandPresetChoose": "Choose…",
+    "presetDisplayOff": "Turn off display (locks)",
+    "presetMuteToggle": "Toggle mute"
   },
   "states": {
     "lostLine": "Connection lost · reconnecting…",

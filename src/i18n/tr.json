@@ -194,7 +194,10 @@
     "github": "github.com/Augustus29/tatar",
     "diagCopy": "Tanılama günlüğünü kopyala",
     "diagCopied": "Tanılama günlüğü panoya kopyalandı.",
-    "diagFailed": "Tanılama günlüğü kopyalanamadı."
+    "diagFailed": "Tanılama günlüğü kopyalanamadı.",
+    "commandPresetChoose": "Seç…",
+    "presetDisplayOff": "Ekranı kapat (kilitler)",
+    "presetMuteToggle": "Sesi aç/kapat"
   },
   "states": {
     "lostLine": "Bağlantı koptu · yeniden bağlanılıyor…",

@@ -320,15 +320,30 @@ function DeviceTab({ device, onUnpair }: { device: Device | undefined; onUnpair:
 type PresetId = '' | 'lock' | 'sleep' | 'mute';
 
 /** Platforma göre hazır komutlar. Ad i18n anahtarıdır; komut metni kabuğa verilir. */
-const PRESETS: Record<Exclude<PresetId, ''>, { nameKey: string; mac: string; win: string }> = {
-  lock: { nameKey: 'settings.presetLock', mac: 'pmset displaysleepnow', win: 'rundll32.exe user32.dll,LockWorkStation' },
-  sleep: { nameKey: 'settings.presetSleep', mac: 'pmset sleepnow', win: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0' },
+const PRESETS: Record<Exclude<PresetId, ''>, { macKey: string; winKey: string; mac: string; win: string }> = {
+  // macOS'ta izinsiz gerçek kilit yok: ekranı kapatır, parola isteği açıksa ekran kilitlenir.
+  lock: {
+    macKey: 'settings.presetDisplayOff',
+    winKey: 'settings.presetLock',
+    mac: 'pmset displaysleepnow',
+    win: 'rundll32.exe user32.dll,LockWorkStation',
+  },
+  sleep: {
+    macKey: 'settings.presetSleep',
+    winKey: 'settings.presetSleep',
+    mac: 'pmset sleepnow',
+    win: 'rundll32.exe powrprof.dll,SetSuspendState 0,1,0',
+  },
+  // Windows'ta sessiz tuşu gönderilir: sesi kapatmaz, açık/kapalı arasında geçiş yapar.
   mute: {
-    nameKey: 'settings.presetMute',
+    macKey: 'settings.presetMute',
+    winKey: 'settings.presetMuteToggle',
     mac: "osascript -e 'set volume output muted true'",
     win: 'powershell -NoProfile -Command "(New-Object -ComObject WScript.Shell).SendKeys([char]173)"',
   },
 };
+
+const presetName = (id: Exclude<PresetId, ''>): string => (isMac ? PRESETS[id].macKey : PRESETS[id].winKey);
 
 const newCommandId = (): string => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
@@ -419,11 +434,11 @@ function CommandsSection() {
               label={t('settings.commandPreset')}
               value=""
               onChange={(v) => {
-                if (v) add(t(PRESETS[v].nameKey), isMac ? PRESETS[v].mac : PRESETS[v].win);
+                if (v) add(t(presetName(v)), isMac ? PRESETS[v].mac : PRESETS[v].win);
               }}
               options={[
-                { value: '', label: t('settings.commandPreset') },
-                ...(Object.keys(PRESETS) as Exclude<PresetId, ''>[]).map((id) => ({ value: id, label: t(PRESETS[id].nameKey) })),
+                { value: '', label: t('settings.commandPresetChoose') },
+                ...(Object.keys(PRESETS) as Exclude<PresetId, ''>[]).map((id) => ({ value: id, label: t(presetName(id)) })),
               ]}
             />
           </div>
