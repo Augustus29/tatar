@@ -11,9 +11,7 @@ v1 kapsamı CLAUDE.md §1'de. Aşağıdakiler istenmeden başlanmaz.
 - Birden fazla cihazla aynı anda çalışma iyileştirmeleri
 - Mobil arayüz uyarlaması
 - Windows 11 "snap layouts" (büyüt düğmesinin üzerine gelince açılan yerleşim paneli): özel büyüt düğmesinde çalışmıyor, çünkü WebView2 `WM_NCHITTEST` iletisini yutuyor. Düğme alanını yerel bir `HTCAPTION`/`HTMAXBUTTON` bölgesi olarak işaretleyen bir çözüm araştırılacak.
-- Tepsi menüsü dili, uygulama dili çalışırken değiştirildiğinde canlı güncellenmiyor (yeniden başlatınca düzeliyor); dil değişince menü yeniden kurulmalı.
 
 ## Bilinen sorunlar (v1 içinde çözülecek)
 
-- **macOS bildirimleri görünmüyor:** Ping alınıyor ve bildirim sisteme iletiliyor, ama macOS 26'da izin penceresi çıkmıyor ve Tatar Sistem Ayarları → Bildirimler listesinde görünmüyor. İlk deneme: uygulamayı `/Applications` klasörüne kopyalayıp oradan açmak. Olmazsa ad-hoc imzayı ve UNUserNotificationCenter yetkilendirme hatasını tanılama günlüğünden incele.
-- **Windows'ta boş disk alanı denetimi yok:** Gelen dosyadan önce boş alan yalnızca macOS'ta denetleniyor. Windows için `windows` crate'inde `Win32_Storage_FileSystem` özelliği açılıp `GetDiskFreeSpaceExW` kullanılmalı (`transfer/safety.rs` içindeki TODO). Aynı özellikle `MoveFileExW` (üzerine yazmayan taşıma) da eklenebilir.
+- **macOS bildirimleri (doğrulama bekliyor):** Paket artık ad-hoc imzalanıyor (`signingIdentity: "-"`), yetkilendirme hatası günlüğe yazılıyor ve hata durumunda `osascript` yedeği kullanılıyor. Gerçek Mac'te izin penceresinin çıktığı doğrulanacak.

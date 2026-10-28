@@ -214,6 +214,27 @@ fn move_no_clobber(part: &Path, target: &Path) -> io::Result<()> {
     if rename_excl(part, target)? {
         return Ok(());
     }
+    #[cfg(windows)]
+    {
+        // MOVEFILE_REPLACE_EXISTING verilmezse hedef varken çağrı ERROR_ALREADY_EXISTS ile döner.
+        use std::os::windows::ffi::OsStrExt;
+        use windows::Win32::Storage::FileSystem::{MOVE_FILE_FLAGS, MoveFileExW};
+        use windows::core::PCWSTR;
+        let w = |p: &Path| -> Vec<u16> { p.as_os_str().encode_wide().chain(Some(0)).collect() };
+        let (f, t) = (w(part), w(target));
+        // SAFETY: iki işaretçi de çağrı boyunca geçerli, NUL ile biten UTF-16 dizeleridir.
+        if unsafe { MoveFileExW(PCWSTR(f.as_ptr()), PCWSTR(t.as_ptr()), MOVE_FILE_FLAGS(0)) }
+            .is_ok()
+        {
+            return Ok(());
+        }
+        let e = io::Error::last_os_error();
+        // 80 = ERROR_FILE_EXISTS, 183 = ERROR_ALREADY_EXISTS
+        return Err(match e.raw_os_error() {
+            Some(80) | Some(183) => io::Error::from(io::ErrorKind::AlreadyExists),
+            _ => e,
+        });
+    }
     let mut dst = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)

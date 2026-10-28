@@ -313,10 +313,22 @@ pub fn free_space(dir: &Path) -> Option<u64> {
         }
         parse_df_available(&String::from_utf8_lossy(&out.stdout))
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     {
-        // TODO(Windows): GetDiskFreeSpaceExW için `windows` crate'inde Win32_Storage_FileSystem
-        // özelliği gerekir (Cargo.toml). Şimdilik denetim atlanır.
+        use std::os::windows::ffi::OsStrExt;
+        use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
+        use windows::core::PCWSTR;
+        let wide: Vec<u16> = dir.as_os_str().encode_wide().chain(Some(0)).collect();
+        let mut kullanilabilir = 0u64;
+        // SAFETY: `wide` NUL ile biten geçerli bir UTF-16 dizesidir; çıktı işaretçisi yereldir.
+        unsafe {
+            GetDiskFreeSpaceExW(PCWSTR(wide.as_ptr()), Some(&mut kullanilabilir), None, None)
+        }
+        .ok()?;
+        Some(kullanilabilir)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
         let _ = dir;
         None
     }

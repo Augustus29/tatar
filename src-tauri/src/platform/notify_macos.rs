@@ -86,9 +86,18 @@ pub fn request_authorization() {
     });
     let block = RcBlock::new(move |granted: objc2::runtime::Bool, err: *mut NSError| {
         if !err.is_null() {
-            // Hata metni içerik taşımaz.
+            // Hata metni içerik taşımaz. Alan/kod, imza sorunlarını (ör. UNErrorDomain 1) ayırt eder.
             let e = unsafe { &*err };
-            log::info!("bildirim izni hatası: {}", e.localizedDescription());
+            log::warn!(
+                "bildirim izni hatası: {} (alan {}, kod {})",
+                e.localizedDescription(),
+                e.domain(),
+                e.code()
+            );
+            // İzin istemi hiç gösterilemedi (ör. geçersiz imza): sistem bildirimleri kullanılamaz,
+            // osascript yedeğine geçilir.
+            DURUM.store(KULLANILAMAZ, Ordering::Relaxed);
+            return;
         }
         if granted.as_bool() {
             DURUM.store(VERILDI, Ordering::Relaxed);
@@ -106,6 +115,10 @@ pub fn request_authorization() {
     let settings_block = RcBlock::new(
         move |s: std::ptr::NonNull<objc2_user_notifications::UNNotificationSettings>| {
             let status = unsafe { s.as_ref() }.authorizationStatus();
+            // İstem hatası kalıcı karardır; ayar sorgusu bunu ezmesin.
+            if DURUM.load(Ordering::Relaxed) == KULLANILAMAZ {
+                return;
+            }
             let (kod, ad) = if status == UNAuthorizationStatus::NotDetermined {
                 (BELIRLENMEDI, "belirlenmedi")
             } else if status == UNAuthorizationStatus::Denied {
@@ -126,9 +139,16 @@ pub fn show(title: &str, body: &str) -> bool {
         uyar_bir_kez("uygulama paketi dışında");
         return false;
     }
-    if DURUM.load(Ordering::Relaxed) == REDDEDILDI {
-        uyar_bir_kez("izin reddedildi");
-        return false;
+    match DURUM.load(Ordering::Relaxed) {
+        REDDEDILDI => {
+            uyar_bir_kez("izin reddedildi");
+            return false;
+        }
+        KULLANILAMAZ => {
+            uyar_bir_kez("yetkilendirme başarısız");
+            return false;
+        }
+        _ => {}
     }
     let center = UNUserNotificationCenter::currentNotificationCenter();
     let content = UNMutableNotificationContent::new();
@@ -142,12 +162,44 @@ pub fn show(title: &str, body: &str) -> bool {
         .unwrap_or(0);
     let id = NSString::from_str(&format!("tatar-{nanos}-{n}"));
     let request = UNNotificationRequest::requestWithIdentifier_content_trigger(&id, &content, None);
-    let block = RcBlock::new(|err: *mut NSError| {
+    let (baslik, govde) = (title.to_owned(), body.to_owned());
+    let block = RcBlock::new(move |err: *mut NSError| {
         if !err.is_null() {
             let e = unsafe { &*err };
-            log::warn!("bildirim eklenemedi: {}", e.localizedDescription());
+            log::warn!(
+                "bildirim eklenemedi: {} (kod {}); osascript yedeği kullanılıyor",
+                e.localizedDescription(),
+                e.code()
+            );
+            osascript(&baslik, &govde);
         }
     });
     center.addNotificationRequest_withCompletionHandler(&request, Some(&block));
     true
+}
+
+/// Yedek yol: `osascript` ile bildirim. Metinler betik içine değil, `argv` ile geçirilir
+/// (kaçış/enjeksiyon sorunu olmaz). Sonuç günlüğe yazılır.
+pub fn osascript(title: &str, body: &str) {
+    let r = std::process::Command::new("/usr/bin/osascript")
+        .args([
+            "-e",
+            "on run argv",
+            "-e",
+            "display notification (item 2 of argv) with title (item 1 of argv)",
+            "-e",
+            "end run",
+            "--",
+            title,
+            body,
+        ])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status();
+    match r {
+        Ok(s) if s.success() => log::info!("bildirim osascript ile gösterildi"),
+        Ok(s) => log::warn!("osascript bildirimi başarısız: {s}"),
+        Err(e) => log::warn!("osascript çalıştırılamadı: {e}"),
+    }
 }

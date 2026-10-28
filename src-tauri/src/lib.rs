@@ -297,6 +297,13 @@ fn apply_settings_effects(
     if ui_changed {
         apply_ui_plan(app, now);
     }
+    // Tepsi menüsü (yalnızca Windows'ta var) dil değişince canlı yeniden kurulur.
+    #[cfg(windows)]
+    if before.is_some_and(|b| b.language != now.language)
+        && let Err(e) = popover::set_tray_menu(app, &now.language)
+    {
+        log::warn!("tepsi menüsü güncellenemedi: {e}");
+    }
     if before.is_none_or(|b| b.launch_at_login != now.launch_at_login) {
         return sync_autostart(app, now.launch_at_login);
     }

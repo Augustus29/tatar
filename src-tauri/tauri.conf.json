@@ -45,6 +45,7 @@
       "icons/icon.ico"
     ],
     "macOS": {
+      "signingIdentity": "-",
       "files": {
         "Resources/en.lproj/InfoPlist.strings": "./macos/en.lproj/InfoPlist.strings",
         "Resources/tr.lproj/InfoPlist.strings": "./macos/tr.lproj/InfoPlist.strings"

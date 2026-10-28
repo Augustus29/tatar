@@ -31,11 +31,19 @@ pub mod notify_macos;
 /// Sistem bildirimi: macOS'ta UNUserNotificationCenter, diğer platformlarda Tauri eklentisi.
 pub fn notify(app: &tauri::AppHandle, title: &str, body: &str) {
     #[cfg(target_os = "macos")]
-    if notify_macos::show(title, body) {
-        return;
+    {
+        let _ = app;
+        if !notify_macos::show(title, body) {
+            // Eski NSUserNotification yolu (tauri eklentisi) macOS 26'da banner göstermez;
+            // yetkilendirme yokken osascript kullanılır.
+            notify_macos::osascript(title, body);
+        }
     }
-    use tauri_plugin_notification::NotificationExt;
-    if let Err(e) = app.notification().builder().title(title).body(body).show() {
-        log::warn!("bildirim gösterilemedi: {e}");
+    #[cfg(not(target_os = "macos"))]
+    {
+        use tauri_plugin_notification::NotificationExt;
+        if let Err(e) = app.notification().builder().title(title).body(body).show() {
+            log::warn!("bildirim gösterilemedi: {e}");
+        }
     }
 }
