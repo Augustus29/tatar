@@ -101,6 +101,10 @@ export interface Settings {
   autoConnect: boolean;
   /** İlk açılış akışı tamamlandı mı */
   onboarded: boolean;
+  /** Telefon bu bilgisayardaki medyayı denetleyebilsin */
+  mediaControl: boolean;
+  /** Arama gelince çalan müziği duraklat, bitince sürdür */
+  pauseMediaOnCall: boolean;
 }
 
 export type SettingsPatch = Partial<Omit<Settings, 'shortcuts'>>;
@@ -120,6 +124,8 @@ export const DEFAULT_SETTINGS: Settings = {
   shareBattery: true,
   autoConnect: true,
   onboarded: true,
+  mediaControl: true,
+  pauseMediaOnCall: true,
 };
 
 export type TroubleshootId = 'wifi' | 'localNetwork' | 'firewall' | 'discovery' | 'phoneApp';

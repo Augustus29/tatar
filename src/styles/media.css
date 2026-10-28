@@ -1,0 +1,56 @@
+/* Medya kartı — telefondaki oynatıcıyı denetleme */
+.media-title,
+.media-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+.media-ctl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.media-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s,
+    transform 0.4s var(--spring);
+}
+.media-btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+.media-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.media-btn.main {
+  color: var(--accent);
+}
+.media-btn:disabled {
+  opacity: 0.35;
+}
+.media-vol {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.media-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+  height: 20px;
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .media-btn {
+    transition: none;
+  }
+}

@@ -320,6 +320,30 @@ Body (AND `plugins/telephony/TelephonyPlugin.kt`, KDE `plugins/telephony/telepho
 - For "mute when a call comes in": mute on `event == "ringing"` (and not `isCancel`); restore on `isCancel`, on `talking` (optional) or on connection loss. The phone only sends these if its user granted phone-state/call-log permission to KDE Connect.
 - `kdeconnect.telephony.request_mute` (desktop -> phone, empty body, `AND TelephonyPlugin.PACKET_TYPE_TELEPHONY_REQUEST_MUTE`): asks the **phone** to silence its ringer. Not needed for v1 (muting is local); declare it in outgoing only if Tatar offers such a button.
 
+### 6.8 `kdeconnect.mpris` - both directions (media control)
+
+Verified in kdeconnect-android `plugins/mpris/MprisPlugin.kt` (phone controls a desktop), `plugins/mprisreceiver/MprisReceiverPlugin.kt` + `MprisReceiverPlayer.kt` (phone exposes its own players), kdeconnect-kde `plugins/mpris/mprisplugin.cpp`, `plugins/mpriscontrol/mpriscontrolplugin*.{cpp,mm}` (desktop exposes players; the macOS and Windows variants are the interesting ones) and `plugins/mprisremote/mprisremoteplugin.cpp` (desktop controls a phone). Two packet types:
+- `kdeconnect.mpris` carries **state** (player list, now-playing). Android receiver sends it; desktop controllers read it.
+- `kdeconnect.mpris.request` carries **commands/queries** (one logical request per packet).
+Phone capabilities: AND `MprisReceiverPlugin` has incoming `kdeconnect.mpris.request`, outgoing `kdeconnect.mpris`; AND `MprisPlugin` (controller, loaded when we expose players) has incoming `kdeconnect.mpris`, outgoing `kdeconnect.mpris.request`. The Android receiver needs the **notification-access permission** and at least one active media session; otherwise it reports an empty `playerList`.
+
+**A. Tatar controls the phone** (we send `.request`, receive `kdeconnect.mpris`; KDE `mprisremote` behaviour):
+- On link-up send `{"requestPlayerList": true}`. Android also pushes a `playerList` packet by itself when its plugin loads and whenever its active media sessions change.
+- `kdeconnect.mpris` with `playerList` (array of strings, player names = app labels like "Spotify") and `supportAlbumArtPayload` (bool). For each **new** name send `{"player": name, "requestNowPlaying": true, "requestVolume": true}`. Android answers only the `requestNowPlaying` part (it ignores `requestVolume`); the answer includes the volume anyway. (Android handles `requestNowPlaying` only when no `albumArtUrl` key is present in the request.)
+- Status packet (`kdeconnect.mpris` with `player`): `title`, `artist`, `album`, `nowPlaying` (copy of title, for GSConnect), `isPlaying` (bool), `pos` (ms), `length` (ms; `-1` unknown), `canPlay`, `canPause`, `canGoNext`, `canGoPrevious`, `canSeek` (bools), `volume` (int 0-100; on the Android receiver `100*current/max` of the session's volume info; `-1` means "volume not settable" in KDE's own desktop senders), `albumArtUrl` (string, may be empty). Updates are pushed on every playback-state / metadata / audio-info change, so no polling is needed. Fields may be missing: keep the old value (Android/KDE both do `get(key, previous)`). Players with an unknown name in a status packet: Android ignores them.
+- Commands (`.request` body; always include `player`; the phone's `action` handler is case-sensitive): `{"player": p, "action": "Play"|"Pause"|"PlayPause"|"Next"|"Previous"|"Stop"}`, `{"player": p, "setVolume": 0..100}`, `{"player": p, "SetPosition": <ms>}`, `{"player": p, "Seek": <int>}` (not used by Tatar). Android receiver executes `SetPosition`, `setVolume` (and re-sends metadata), then `action`, in that order; a packet with unknown `player` is ignored.
+- Album art: `{"player": p, "albumArtUrl": url}` -> phone replies `kdeconnect.mpris` with `transferringAlbumArt: true`, `player`, `albumArtUrl` and a JPEG **payload**. Tatar v1 does not request art.
+
+**B. The phone controls this computer** (Tatar answers `.request`, sends `kdeconnect.mpris`; KDE `mpriscontrol` behaviour):
+- Request handling (`MprisControlPlugin::receivePacket`): if the packet has `albumArtUrl` -> album-art path (Tatar: ignored). Else `player` is looked up; if it is not a known player **or** `requestPlayerList` is true -> answer with the list; unknown player -> stop. Then in this order: `action`, `setLoopStatus`, `setShuffle`, `setVolume` (int 0-100, desktop divides by 100), `Seek` (microseconds offset, passed straight to MPRIS), `SetPosition` (ms; desktop converts to us and seeks relative to the current position), then the reads: `requestNowPlaying` -> full status packet, `requestVolume` -> `{"player", "volume"}` (merged into one answer packet if both are set).
+- List packet: `{"playerList": [names], "supportAlbumArtPayload": bool}`. Tatar sends `false` (no album art).
+- Status packet fields as in A; **units are milliseconds** for `pos` and `length` (KDE divides MPRIS microseconds by 1000). Desktop pushes changes when MPRIS properties change; it always adds `canSeek` and (if seekable) `pos`.
+- The Android controller shows the volume slider only if `volume > -1`, seek only if `length >= 0`.
+- KDE's own **macOS** player (`mpriscontrolplugin-macos.mm`) exposes one fake player "Current Player" and only synthesises media keys (`CGEventPost`, needs Accessibility permission); it cannot read state. KDE's **Windows** player uses `GlobalSystemMediaTransportControlsSessionManager` (one player per session, `SetPosition` via `TryChangePlaybackPositionAsync`, volume `-1` because per-app volume is unsupported).
+- Security: KDE trusts the `action` string (`mprisInterface.call(action)`). Tatar must not: map `action` to a fixed enum, match `player` against its own list by equality only, clamp numbers, and never put phone strings into a script or command line.
+
+Tatar v1 decisions: Direction A is pure protocol. Direction B only exposes players it can really control (macOS: Music and Spotify through fixed AppleScript, see platform notes in the code; Windows: all GSMTC sessions). Capabilities: see section 8. **[UNVERIFIED]** on real hardware: Android `Seek` unit, how Android labels players whose app label is empty, behaviour of the receiver when two sessions share one app label (it keeps only one, `players.put(name)`).
+
 ---
 
 ## 7. Payload transfer (file data)
@@ -368,6 +392,8 @@ incomingCapabilities (what we can receive):
   kdeconnect.share.request
   kdeconnect.share.request.update
   kdeconnect.telephony
+  kdeconnect.mpris                  (6.8 A: phone's players)
+  kdeconnect.mpris.request          (6.8 B: phone controls this computer)
 
 outgoingCapabilities (what we send):
   kdeconnect.ping
@@ -377,6 +403,8 @@ outgoingCapabilities (what we send):
   kdeconnect.share.request
   kdeconnect.share.request.update
   kdeconnect.battery.request        (optional; only useful for iOS peers, see 6.3)
+  kdeconnect.mpris.request          (6.8 A)
+  kdeconnect.mpris                  (6.8 B)
 ```
 Why each (what Android shows because of it):
 | Capability | Phone effect |
@@ -386,8 +414,9 @@ Why each (what Android shows because of it):
 | out `kdeconnect.findmyphone.request` | FindMyPhone plugin loads on the phone (it is the ringing side) |
 | in/out `kdeconnect.clipboard`, `kdeconnect.clipboard.connect` | Clipboard plugin loads: phone sends initial `clipboard.connect` and updates; "Send clipboard" button on the phone |
 | in `kdeconnect.share.request` (+`.update`), out `kdeconnect.share.request` | Share plugin loads: "Send files" button and share-sheet target on the phone; phone can send us files, text, URLs |
+| in `kdeconnect.mpris` + out `kdeconnect.mpris.request` / in `kdeconnect.mpris.request` + out `kdeconnect.mpris` | Android MprisReceiver (needs notification access) and MprisPlugin ("Multimedia control" screen) both load; see 6.8 |
 | in `kdeconnect.telephony` | Telephony plugin loads on the phone (needs the user's phone/call-log permissions), which then sends call events to us |
-Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.mpris*`, `kdeconnect.sms.*`, `kdeconnect.runcommand*`, `kdeconnect.notification*`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
+Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.sms.*`, `kdeconnect.runcommand*`, `kdeconnect.notification*`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
 iOS peers' capabilities (for tolerance): ping, share.request(+update), findmyphone.request, battery(+request), clipboard(+connect), runcommand; no telephony. So with an iPhone, no call-mute feature.
 Packet types the phone declares as incoming that Tatar can use: Android incoming: `kdeconnect.ping`, `kdeconnect.findmyphone.request`, `kdeconnect.battery`, `kdeconnect.clipboard`, `kdeconnect.clipboard.connect`, `kdeconnect.share.request`, `kdeconnect.share.request.update`, `kdeconnect.telephony.request_mute`. Before sending any packet, check the peer's `incomingCapabilities` contains the type (KDE does, Android does).
 
