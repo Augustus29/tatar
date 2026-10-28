@@ -324,6 +324,8 @@ pub fn free_space(dir: &Path) -> Option<u64> {
 
 /// `df -Pk` çıktısından "Available" (KiB) sütununu bayta çevirir. Sütun, `NN%` ("Capacity")
 /// belirtecinden hemen öncedir; dosya sistemi/bağ noktası adındaki boşluklar sorun olmaz.
+// Yalnızca unix'te `free_space` kullanır; Windows'ta testler için derlenir.
+#[cfg_attr(not(unix), allow(dead_code))]
 pub fn parse_df_available(out: &str) -> Option<u64> {
     let line = out.lines().rev().find(|l| !l.trim().is_empty())?;
     let toks: Vec<&str> = line.split_whitespace().collect();
