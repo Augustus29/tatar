@@ -83,6 +83,8 @@ impl plugins::notifier::Notifier for TauriNotifier {
             .show()
         {
             log::warn!("bildirim gösterilemedi: {e}");
+        } else {
+            log::debug!("bildirim sisteme iletildi");
         }
     }
 }

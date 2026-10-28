@@ -36,6 +36,7 @@ impl Plugin for PingPlugin {
         &[TYPE_PING]
     }
     fn handle(&self, device: &DeviceHandle, packet: &NetworkPacket) {
+        log::info!("ping alındı, bildirim gösteriliyor");
         let lang = resolve_language(&self.shared.settings().language);
         let title = notify_text(lang, "pingTitle", &[]);
         // Telefon ileti de gönderebilir; yoksa varsayılan metin. İleti uzunluğu sınırlanır.
