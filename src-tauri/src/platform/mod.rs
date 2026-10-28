@@ -24,3 +24,18 @@ mod other;
 pub use other::{
     apply_window_material, reduce_transparency, watch_reduce_transparency, window_material_active,
 };
+
+#[cfg(target_os = "macos")]
+pub mod notify_macos;
+
+/// Sistem bildirimi: macOS'ta UNUserNotificationCenter, diğer platformlarda Tauri eklentisi.
+pub fn notify(app: &tauri::AppHandle, title: &str, body: &str) {
+    #[cfg(target_os = "macos")]
+    if notify_macos::show(title, body) {
+        return;
+    }
+    use tauri_plugin_notification::NotificationExt;
+    if let Err(e) = app.notification().builder().title(title).body(body).show() {
+        log::warn!("bildirim gösterilemedi: {e}");
+    }
+}

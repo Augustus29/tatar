@@ -28,7 +28,6 @@ use tauri::RunEvent;
 use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_dialog::DialogExt;
-use tauri_plugin_notification::NotificationExt;
 
 /// Rust -> arayüz olayları Tauri olayı olarak gider.
 struct TauriSink(AppHandle);
@@ -74,18 +73,7 @@ struct TauriNotifier(AppHandle);
 
 impl plugins::notifier::Notifier for TauriNotifier {
     fn notify(&self, title: &str, body: &str) {
-        if let Err(e) = self
-            .0
-            .notification()
-            .builder()
-            .title(title)
-            .body(body)
-            .show()
-        {
-            log::warn!("bildirim gösterilemedi: {e}");
-        } else {
-            log::debug!("bildirim sisteme iletildi");
-        }
+        platform::notify(&self.0, title, body);
     }
 }
 
@@ -478,16 +466,7 @@ struct AppNotifier {
 
 impl AppNotifier {
     fn show(&self, title: String, body: String) {
-        if let Err(e) = self
-            .app
-            .notification()
-            .builder()
-            .title(title)
-            .body(body)
-            .show()
-        {
-            log::warn!("bildirim gösterilemedi: {e}");
-        }
+        platform::notify(&self.app, &title, &body);
     }
 
     fn set_clipboard(&self, text: &str) {
@@ -653,6 +632,8 @@ pub fn run() {
         .setup(|app| {
             popover::setup(app.handle())?;
             platform::watch_reduce_transparency(app.handle());
+            #[cfg(target_os = "macos")]
+            platform::notify_macos::request_authorization();
             platform::apply_window_material(app.handle());
             start_protocol(app.handle())?;
             let settings = app.state::<ManagerHandle>().get_settings();
