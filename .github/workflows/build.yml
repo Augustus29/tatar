@@ -6,6 +6,12 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      platform:
+        description: "Hangi platform derlensin? (macOS dakikaları 10 kat sayılır)"
+        type: choice
+        default: windows
+        options: [windows, macos, both]
 
 permissions:
   contents: read
@@ -17,6 +23,7 @@ concurrency:
 jobs:
   check:
     name: Kontrol (macOS)
+    if: github.event_name != 'workflow_dispatch' || inputs.platform != 'windows'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,69 +68,31 @@ jobs:
         working-directory: src-tauri
         run: cargo test
 
-  build:
-    name: Derle (${{ matrix.name }})
+  build-macos:
+    name: Derle (macOS)
     needs: check
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: macOS
-            os: macos-latest
-            artifact: Tatar-macos
-          - name: Windows
-            os: windows-latest
-            artifact: Tatar-windows
-    runs-on: ${{ matrix.os }}
+    # 'check' atlansa da (yalnızca Windows seçilince) çalışır, başarısız olursa çalışmaz.
+    if: ${{ !cancelled() && !failure() && (github.event_name != 'workflow_dispatch' || inputs.platform == 'both' || inputs.platform == 'macos') }}
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Rust (macOS evrensel ikili için her iki hedef)
         if: runner.os == 'macOS'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
-
-      - name: Rust (Windows)
-        if: runner.os == 'Windows'
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
-
       - name: npm ci
         run: npm ci
-
-      - name: Windows - frontend derlemesi
-        if: runner.os == 'Windows'
-        run: npm run build
-
-      - name: Windows - cargo clippy
-        if: runner.os == 'Windows'
-        working-directory: src-tauri
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Windows - cargo test
-        if: runner.os == 'Windows'
-        working-directory: src-tauri
-        run: cargo test
-
       - name: Tauri derle (macOS evrensel)
         if: runner.os == 'macOS'
         run: npx tauri build --target universal-apple-darwin --bundles app,dmg
-
-      - name: Tauri derle (Windows)
-        if: runner.os == 'Windows'
-        run: npx tauri build --bundles msi,nsis
-
       - name: macOS - .app dosyasını ziple
         if: runner.os == 'macOS'
         run: |
@@ -132,7 +101,6 @@ jobs:
             src-tauri/target/universal-apple-darwin/release/bundle/macos/Tatar.app \
             staging/Tatar.app.zip
           cp src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg staging/
-
       - name: Upload - macOS
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
@@ -141,6 +109,42 @@ jobs:
           path: staging/*
           if-no-files-found: error
 
+  build-windows:
+    name: Derle (Windows)
+    needs: check
+    # 'check' atlansa da (yalnızca Windows seçilince) çalışır, başarısız olursa çalışmaz.
+    if: ${{ !cancelled() && !failure() && (github.event_name != 'workflow_dispatch' || inputs.platform == 'both' || inputs.platform == 'windows') }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Rust (Windows)
+        if: runner.os == 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - name: npm ci
+        run: npm ci
+      - name: Windows - frontend derlemesi
+        if: runner.os == 'Windows'
+        run: npm run build
+      - name: Windows - cargo clippy
+        if: runner.os == 'Windows'
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Windows - cargo test
+        if: runner.os == 'Windows'
+        working-directory: src-tauri
+        run: cargo test
+      - name: Tauri derle (Windows)
+        if: runner.os == 'Windows'
+        run: npx tauri build --bundles msi,nsis
       - name: Upload - Windows
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
