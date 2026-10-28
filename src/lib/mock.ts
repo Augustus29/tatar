@@ -54,6 +54,7 @@ function initialDevices(): Device[] {
       lastSeen: t0 - 2 * HOUR,
     },
     { id: 'pixel', name: 'Pixel 8', type: 'phone', reachable: true, paired: false, battery: null, ip: '192.168.1.115', lastSeen: t0 },
+    { id: 'tab2', name: 'Galaxy Tab A9', type: 'tablet', reachable: true, paired: false, battery: null, ip: '192.168.1.118', lastSeen: t0 },
   ];
 }
 

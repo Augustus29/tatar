@@ -937,3 +937,13 @@
     transform: none;
   }
 }
+
+/* İlk açılış: birden fazla bulunan cihaz alt alta, çoksa kaydırılır. */
+.onb-phase.found-list {
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.onb-phase.found-list .found-card {
+  width: 100%;
+}

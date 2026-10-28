@@ -56,9 +56,8 @@ export function Onboarding({ startAt = 'steps', onFinish }: OnboardingProps) {
     setWaited(false);
     setPhase('search');
   };
-  const pair = () => {
-    if (!found) return;
-    void actions.requestPair(found.id);
+  const pair = (deviceId: string) => {
+    void actions.requestPair(deviceId);
     onFinish();
   };
 
@@ -130,20 +129,28 @@ export function Onboarding({ startAt = 'steps', onFinish }: OnboardingProps) {
         </div>
       )}
 
-      {shown === 'found' && found && (
-        <div className="onb-phase">
-          <div className="found-card">
-            <span className="ico">
-              <DeviceIcon type={found.type} size={24} />
-            </span>
-            <span className="stxt">
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{t('onboarding.found', { device: found.name })}</span>
-              <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('onboarding.foundLine', { ip: found.ip ?? '' })}</span>
-            </span>
-            <button type="button" data-autofocus className="btn btn-base lg b600 pri" onClick={pair}>
-              {t('onboarding.pair')}
-            </button>
-          </div>
+      {shown === 'found' && (
+        // Bulunan bütün cihazlar listelenir; liste yeni cihaz bulundukça canlı güncellenir.
+        <div className="onb-phase found-list">
+          {nearby.map((d, i) => (
+            <div className="found-card" key={d.id}>
+              <span className="ico">
+                <DeviceIcon type={d.type} size={24} />
+              </span>
+              <span className="stxt">
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{t('onboarding.found', { device: d.name })}</span>
+                <span style={{ fontSize: 12, color: 'var(--text2)' }}>{t('onboarding.foundLine', { ip: d.ip ?? '' })}</span>
+              </span>
+              <button
+                type="button"
+                data-autofocus={i === 0 ? true : undefined}
+                className={`btn btn-base lg b600 ${i === 0 ? 'pri' : 'glass btn-sec'}`}
+                onClick={() => pair(d.id)}
+              >
+                {t('onboarding.pair')}
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
