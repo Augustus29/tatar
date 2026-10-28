@@ -31,19 +31,25 @@ Features not in this version (remote input, SMS, media control, file browsing, r
 
 ## Installation
 
-Tatar is not published as an official release yet. Built files are downloaded from GitHub Actions.
+Installers are on the GitHub [Releases](https://github.com/Augustus29/tatar/releases/latest) page.
 
 ### macOS (macOS 13 or later, Apple Silicon and Intel)
 
-1. Open the repository on GitHub and go to the **Actions** tab.
-2. Select the **build** workflow in the list on the left and open the latest successful (green) run.
-3. In the **Artifacts** section at the bottom of the page, download **Tatar-macos**. It contains `Tatar.app.zip` and a `.dmg` file.
-4. Move `Tatar.app` to your **Applications** folder.
+**Easy way (recommended).** Open the **Terminal** app (type "Terminal" in Spotlight), paste the line below and press Enter:
 
-**First launch.** The app is not signed by Apple, so macOS shows a warning the first time:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Augustus29/tatar/main/scripts/install.sh | sh
+```
 
-- **Right-click** `Tatar.app`, choose **Open**, then click **Open** again in the dialog.
-- On macOS 15 and later, if that does not work, go to **System Settings → Privacy & Security**, and click **"Open Anyway"** at the bottom of the section.
+This downloads the latest release, verifies it, installs it into your **Applications** folder and opens it. Installed this way, macOS does not show the "Tatar Not Opened" warning. To update, run the same command again.
+
+**Install from the DMG.** Download the `.dmg` file from the [Releases](https://github.com/Augustus29/tatar/releases/latest) page, open it and drag `Tatar.app` into **Applications**.
+
+Because the app is not signed by Apple, macOS shows a **"Tatar" Not Opened** warning the first time when installed from the DMG:
+
+1. Click **Done** in the warning (not **Move to Trash**).
+2. Go to **System Settings → Privacy & Security**, click **"Open Anyway"** near the bottom and enter your password.
+3. Open Tatar again and choose **Open Anyway** in the dialog.
 
 **Permissions.**
 
@@ -52,8 +58,8 @@ Tatar is not published as an official release yet. Built files are downloaded fr
 
 ### Windows (Windows 10 and 11, x64)
 
-1. Download **Tatar-windows** the same way as above.
-2. Run the `*-setup.exe` file (or the `.msi`) from it.
+1. Download the `*-setup.exe` (or `.msi`) file from the [Releases](https://github.com/Augustus29/tatar/releases/latest) page.
+2. Run the downloaded file.
 3. If the **Windows SmartScreen** warning appears, click **More info**, then **Run anyway**. This warning is expected because the app is not signed.
 4. If the firewall prompt appears, allow access on **private networks**. Allowing it for your home or work network is enough.
 

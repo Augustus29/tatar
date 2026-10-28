@@ -31,19 +31,25 @@ Bu sürümde olmayanlar (uzaktan giriş, SMS, medya kontrolü, dosya gezgini, ko
 
 ## Kurulum
 
-Tatar henüz resmî bir sürüm olarak yayınlanmadı. Derlenmiş dosyalar GitHub Actions üzerinden alınır.
+Kurulum dosyaları GitHub'daki [Sürümler (Releases)](https://github.com/Augustus29/tatar/releases/latest) sayfasındadır.
 
 ### macOS (macOS 13 ve üzeri, Apple Silicon ve Intel)
 
-1. GitHub'da depoyu açın ve **Actions** sekmesine gidin.
-2. Soldaki listeden **build** iş akışını seçin ve en son başarılı (yeşil) çalıştırmayı açın.
-3. Sayfanın altındaki **Artifacts** bölümünden **Tatar-macos** dosyasını indirin. İçinden `Tatar.app.zip` ve `.dmg` dosyası çıkar.
-4. `Tatar.app` uygulamasını **Uygulamalar** klasörüne taşıyın.
+**Kolay yol (önerilen).** **Terminal** uygulamasını açın (Spotlight'ta "Terminal" yazın), aşağıdaki satırı yapıştırıp Enter'a basın:
 
-**İlk açılış.** Uygulama Apple tarafından imzalanmamıştır, bu yüzden macOS ilk açılışta uyarır:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Augustus29/tatar/main/scripts/install.sh | sh
+```
 
-- `Tatar.app` üzerine **sağ tıklayın** ve **Aç**'ı seçin, açılan pencerede yine **Aç**'a basın.
-- macOS 15 ve üzerinde bu yol işe yaramazsa **Sistem Ayarları → Gizlilik ve Güvenlik** bölümüne gidin, aşağıda çıkan **"Yine de Aç"** düğmesine basın.
+Bu komut son sürümü indirir, bozulmadığını kontrol eder, **Uygulamalar** klasörüne kurar ve açar. Bu yolla kurulduğunda macOS'un "Tatar açılmadı" uyarısı çıkmaz. Güncellemek için aynı komutu yeniden çalıştırmanız yeterlidir.
+
+**DMG ile kurulum.** [Sürümler](https://github.com/Augustus29/tatar/releases/latest) sayfasından `.dmg` dosyasını indirin, açın ve `Tatar.app`'i **Uygulamalar** klasörüne sürükleyin.
+
+Uygulama Apple tarafından imzalanmadığı için DMG ile kurulduğunda macOS ilk açılışta **"Tatar" Açılmadı** uyarısı verir:
+
+1. Uyarıda **Bitti**'ye basın (**Çöp Sepeti'ne Taşı**'ya basmayın).
+2. **Sistem Ayarları → Gizlilik ve Güvenlik** bölümüne gidin, en altta çıkan **"Yine de Aç"** düğmesine basın ve parolanızı girin.
+3. Tatar'ı yeniden açın ve çıkan pencerede **Yine de Aç**'ı seçin.
 
 **İzinler.**
 
@@ -52,8 +58,8 @@ Tatar henüz resmî bir sürüm olarak yayınlanmadı. Derlenmiş dosyalar GitHu
 
 ### Windows (Windows 10 ve 11, x64)
 
-1. Yukarıdaki adımlarla aynı şekilde **Tatar-windows** dosyasını indirin.
-2. İçinden `*-setup.exe` (veya `.msi`) dosyasını çalıştırın.
+1. [Sürümler](https://github.com/Augustus29/tatar/releases/latest) sayfasından `*-setup.exe` (veya `.msi`) dosyasını indirin.
+2. İndirdiğiniz dosyayı çalıştırın.
 3. **Windows SmartScreen** uyarısı çıkarsa **Ek bilgi**'ye, sonra **Yine de çalıştır**'a tıklayın. Uygulama imzasız olduğu için bu uyarı normaldir.
 4. Güvenlik duvarı izin penceresi çıkarsa **Özel ağlar** için izin verin. Yalnızca evdeki veya işteki ağ için izin vermek yeterlidir.
 
