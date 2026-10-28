@@ -17,6 +17,7 @@ use crate::store::{Settings, SettingsStore};
 
 pub mod battery;
 pub mod findmyphone;
+pub mod notification;
 pub mod notifier;
 pub mod ping;
 pub mod telephony;

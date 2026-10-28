@@ -320,6 +320,22 @@ Body (AND `plugins/telephony/TelephonyPlugin.kt`, KDE `plugins/telephony/telepho
 - For "mute when a call comes in": mute on `event == "ringing"` (and not `isCancel`); restore on `isCancel`, on `talking` (optional) or on connection loss. The phone only sends these if its user granted phone-state/call-log permission to KDE Connect.
 - `kdeconnect.telephony.request_mute` (desktop -> phone, empty body, `AND TelephonyPlugin.PACKET_TYPE_TELEPHONY_REQUEST_MUTE`): asks the **phone** to silence its ringer. Not needed for v1 (muting is local); declare it in outgoing only if Tatar offers such a button.
 
+### 6.7 `kdeconnect.notification` - phone -> Tatar (notification mirroring)
+Verified against kdeconnect-android `plugins/notifications/NotificationsPlugin.kt` (supportedPacketTypes = `kdeconnect.notification.request`, `.reply`, `.action`; outgoingPacketTypes = `kdeconnect.notification`) and kdeconnect-kde `plugins/notifications/notification.cpp` (parse side).
+Phone -> desktop `kdeconnect.notification` body:
+| Field | Notes |
+|---|---|
+| `id` | String key, unique per notification on the phone; stable across updates. |
+| `isCancel` | `true` (sent with only `id`): the phone removed the notification. Tatar: forget it, show nothing. |
+| `appName`, `title`, `text`, `ticker` | Strings; absent when the user blocked contents for that app on the phone (then only id/appName/actions/time/silent are sent). For group chats Android sets `title` = group name and `text` = `"<sender>: <message>"`. |
+| `silent` | Android: `isPreexisting \|\| (isUpdate && FLAG_ONLY_ALERT_ONCE)`. So `silent: true` = notification that already existed when the plugin synced (e.g. after `request: true`) or a re-post that must not alert again. KDE builds it but does not raise the event. Tatar: do not show. (`onlyOnce` is NOT a field in the Android packet; the notion is carried by `silent`.) |
+| `isClearable`, `time` (ms as string), `actions` (array of titles), `requestReplyId`, `conversation`, `groupName` | Not used by Tatar. |
+| `payloadHash` + payload | Icon PNG, sent only when the icon hash changed. Tatar ignores icons and never opens the payload socket (the phone's payload server simply times out). |
+Android skips ongoing / foreground-service / group-summary / transport notifications itself and KDE Connect's own.
+Desktop -> phone (NOT implemented): `kdeconnect.notification.request` with `{request:true}` (re-send all current, they come back with `silent:true`, so useless for mirroring) or `{cancel:"<id>"}` (dismiss on the phone); `kdeconnect.notification.action` (`key`, `action`); `kdeconnect.notification.reply` (`requestReplyId`, `message`).
+Tatar: advertises only **incoming** `kdeconnect.notification` (Android loads the plugin because our incoming matches its outgoing, see 8); dedupes on (device, id, title+text), caps to 5 shown per 10 s, sanitises/length-limits all fields, never logs content. Settings `notificationMirror` (packets dropped when off; capability stays advertised) and `notificationHideContent`.
+Note: Android also has a separate `receivenotifications` plugin (the *phone* receiving from a desktop); irrelevant here. The phone user must grant notification-listener access to KDE Connect.
+
 ---
 
 ## 7. Payload transfer (file data)
@@ -368,6 +384,7 @@ incomingCapabilities (what we can receive):
   kdeconnect.share.request
   kdeconnect.share.request.update
   kdeconnect.telephony
+  kdeconnect.notification           (6.7; mirroring)
 
 outgoingCapabilities (what we send):
   kdeconnect.ping
@@ -386,8 +403,9 @@ Why each (what Android shows because of it):
 | out `kdeconnect.findmyphone.request` | FindMyPhone plugin loads on the phone (it is the ringing side) |
 | in/out `kdeconnect.clipboard`, `kdeconnect.clipboard.connect` | Clipboard plugin loads: phone sends initial `clipboard.connect` and updates; "Send clipboard" button on the phone |
 | in `kdeconnect.share.request` (+`.update`), out `kdeconnect.share.request` | Share plugin loads: "Send files" button and share-sheet target on the phone; phone can send us files, text, URLs |
+| in `kdeconnect.notification` | Notifications plugin loads on the phone (needs notification-listener access) and mirrors notifications to us |
 | in `kdeconnect.telephony` | Telephony plugin loads on the phone (needs the user's phone/call-log permissions), which then sends call events to us |
-Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.mpris*`, `kdeconnect.sms.*`, `kdeconnect.runcommand*`, `kdeconnect.notification*`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
+Do **not** advertise anything we cannot handle (CLAUDE.md rule): e.g. not `kdeconnect.clipboard.file`, `kdeconnect.mpris*`, `kdeconnect.sms.*`, `kdeconnect.runcommand*`, `kdeconnect.notification.request/.action/.reply`, `kdeconnect.mousepad.*`, `kdeconnect.sftp*`.
 iOS peers' capabilities (for tolerance): ping, share.request(+update), findmyphone.request, battery(+request), clipboard(+connect), runcommand; no telephony. So with an iPhone, no call-mute feature.
 Packet types the phone declares as incoming that Tatar can use: Android incoming: `kdeconnect.ping`, `kdeconnect.findmyphone.request`, `kdeconnect.battery`, `kdeconnect.clipboard`, `kdeconnect.clipboard.connect`, `kdeconnect.share.request`, `kdeconnect.share.request.update`, `kdeconnect.telephony.request_mute`. Before sending any packet, check the peer's `incomingCapabilities` contains the type (KDE does, Android does).
 

@@ -43,6 +43,10 @@ pub struct Settings {
     pub share_battery: bool,
     pub auto_connect: bool,
     pub onboarded: bool,
+    /// Telefon bildirimlerini sistem bildirimi olarak göster.
+    pub notification_mirror: bool,
+    /// Yansıtılan bildirimde yalnızca uygulama adı gösterilir.
+    pub notification_hide_content: bool,
 }
 
 pub fn default_shortcuts() -> BTreeMap<String, Vec<String>> {
@@ -74,6 +78,8 @@ impl Default for Settings {
             auto_connect: true,
             // Taze kurulumda ilk açılış akışı gösterilir (arayüz, yüklenmeden önce `true` varsayar).
             onboarded: false,
+            notification_mirror: true,
+            notification_hide_content: false,
         }
     }
 }
@@ -95,6 +101,8 @@ pub struct SettingsPatch {
     pub share_battery: Option<bool>,
     pub auto_connect: Option<bool>,
     pub onboarded: Option<bool>,
+    pub notification_mirror: Option<bool>,
+    pub notification_hide_content: Option<bool>,
 }
 
 fn one_of(v: &str, allowed: &[&str]) -> bool {
@@ -151,7 +159,9 @@ impl Settings {
             device_name,
             share_battery,
             auto_connect,
-            onboarded
+            onboarded,
+            notification_mirror,
+            notification_hide_content
         );
         *self = std::mem::take(self).sanitized();
     }
