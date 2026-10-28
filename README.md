@@ -17,6 +17,10 @@ macOS'ta menü çubuğunda yaşar, Windows'ta sistem tepsisinde durur. Tauri 2, 
 - **Pano senkronizasyonu:** Otomatik, elle veya kapalı çalışır. En fazla 20 öğelik pano geçmişi tutar. Şifre yöneticisi gibi gizli olarak işaretlenmiş içerik asla gönderilmez ve geçmişe yazılmaz.
 - **Dosya gönderme (iki yön):** Dosyaları sürükleyip bırakarak ya da seçerek telefona gönderebilir, telefondan alabilirsiniz. İlerleme çubuğu, iptal ve "Tekrar dene" seçenekleri vardır.
 - **Arama gelince sesi kapat:** Telefon çaldığında bilgisayarın sesini kapatır veya azaltır, arama bitince önceki sesi geri yükler.
+- **Arama gelince müziği duraklat:** Telefon çaldığında bilgisayardaki müziği duraklatır.
+- **Bildirim yansıtma:** Telefonunuza gelen bildirimleri bilgisayarda sistem bildirimi olarak görürsünüz. Telefonda KDE Connect'e bildirim erişimi izni verilmiş olmalıdır. Bildirim içeriğini gizlemek de mümkündür.
+- **Medya kontrolü:** Telefondaki müziği bilgisayardan oynatabilir, duraklatabilir ve parçaları değiştirebilirsiniz; bilgisayardaki medyayı da telefondan yönetebilirsiniz. Telefonda KDE Connect'e bildirim erişimi izni gerekir. macOS'ta yalnızca Müzik ve Spotify desteklenir.
+- **Telefondan komut çalıştırma:** Ayarlar → Cihaz bölümünde tanımladığınız komutları telefonunuzdaki KDE Connect'ten bilgisayarda çalıştırabilirsiniz.
 - **Genel kısayollar:**
   - ⇧⌘C: Panoyu telefona gönder
   - ⇧⌘F: Dosya gönder
@@ -27,7 +31,7 @@ macOS'ta menü çubuğunda yaşar, Windows'ta sistem tepsisinde durur. Tauri 2, 
 - **Türkçe ve İngilizce arayüz:** Varsayılan olarak sistem dilini kullanır, Ayarlar'dan değiştirilebilir.
 - **Erişilebilirlik:** "Saydamlığı azalt" ayarını ve "Hareketi azalt" tercihini izler.
 
-Bu sürümde olmayanlar (uzaktan giriş, SMS, medya kontrolü, dosya gezgini, komut çalıştırma, bildirim yansıtma ve benzeri) [docs/ROADMAP.md](docs/ROADMAP.md) dosyasında listelenmiştir.
+Bu sürümde olmayanlar (uzaktan giriş, SMS, dosya gezgini ve benzeri) [docs/ROADMAP.md](docs/ROADMAP.md) dosyasında listelenmiştir.
 
 ## Kurulum
 
@@ -55,6 +59,8 @@ Uygulama Apple tarafından imzalanmadığı için DMG ile kurulduğunda macOS il
 
 - **Yerel ağ erişimi:** Uygulama ilk kez açıldığında izin isterse **İzin ver**'i seçin. Yoksa telefon bulunamaz.
 - **Anahtar zinciri (Keychain):** Güvenli bağlantı için kullanılan özel anahtar macOS anahtar zincirinde saklanır. Parola istendiğinde Mac'inizin giriş parolasını girin ve **Her Zaman İzin Ver** seçeneğini seçin. İmzasız sürümler her güncellemeden sonra bu soruyu yeniden sorar.
+- **Müzik ve Spotify (macOS):** Medya kontrolü ilk kullanıldığında macOS "Tatar, Müzik'i (veya Spotify'ı) denetlemek istiyor" diye sorar. **İzin ver**'i seçin; bu izin yalnızca bir kez sorulur.
+- **Telefonda bildirim erişimi:** Bildirim yansıtma ve medya kontrolü için telefondaki KDE Connect uygulamasına bildirim erişimi izni verin (Ayarlar → Uygulamalar → KDE Connect → Bildirimler).
 
 ### Windows (Windows 10 ve 11, x64)
 

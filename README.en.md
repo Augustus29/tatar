@@ -17,6 +17,10 @@ On macOS it lives in the menu bar; on Windows it sits in the system tray. It is 
 - **Clipboard sync:** Automatic, manual or off. Keeps a clipboard history of up to 20 items. Content that password managers mark as secret is never sent and is never stored in the history.
 - **File sharing in both directions:** Send files to your phone by dragging and dropping them or by picking them, and receive files from the phone. Shows progress, with cancel and "Try again" options.
 - **Mute when a call comes in:** When your phone rings, Tatar mutes or lowers the computer's sound, and restores the previous volume when the call ends.
+- **Pause music when a call comes in:** When your phone rings, Tatar pauses the music playing on the computer.
+- **Notification mirroring:** Notifications from your phone appear on the computer as system notifications. KDE Connect needs notification access on the phone. You can also hide the notification content.
+- **Media control:** Play, pause and skip tracks on your phone from the computer, and control media on the computer from your phone. KDE Connect needs notification access on the phone. On macOS, only Music and Spotify are supported.
+- **Running commands from the phone:** Run the commands you define in Settings → Device from the KDE Connect app on your phone.
 - **Global shortcuts:**
   - ⇧⌘C: send the clipboard to the phone
   - ⇧⌘F: send a file
@@ -27,7 +31,7 @@ On macOS it lives in the menu bar; on Windows it sits in the system tray. It is 
 - **Turkish and English interface:** Follows the system language by default and can be changed in Settings.
 - **Accessibility:** Respects the system "Reduce transparency" and "Reduce motion" settings.
 
-Features not in this version (remote input, SMS, media control, file browsing, running commands, notification mirroring, and similar) are listed in [docs/ROADMAP.md](docs/ROADMAP.md).
+Features not in this version (remote input, SMS, file browsing, and similar) are listed in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Installation
 
@@ -55,6 +59,8 @@ Because the app is not signed by Apple, macOS shows a **"Tatar" Not Opened** war
 
 - **Local network access:** If macOS asks for local network access when the app first opens, choose **Allow**. Without it, the phone cannot be found.
 - **Keychain:** The private key used for the secure connection is stored in the macOS Keychain. When asked for a password, enter your Mac login password and choose **Always Allow**. Unsigned builds ask again after each update.
+- **Music and Spotify (macOS):** The first time you use media control, macOS asks "Tatar wants to control Music (or Spotify)". Choose **Allow**; this is asked only once.
+- **Notification access on the phone:** Notification mirroring and media control need notification access for the KDE Connect app on your phone (Settings → Apps → KDE Connect → Notifications).
 
 ### Windows (Windows 10 and 11, x64)
 
