@@ -101,6 +101,10 @@ export interface Settings {
   autoConnect: boolean;
   /** İlk açılış akışı tamamlandı mı */
   onboarded: boolean;
+  /** Telefon bildirimlerini sistem bildirimi olarak göster */
+  notificationMirror: boolean;
+  /** Yansıtılan bildirimde içeriği gizle (yalnızca uygulama adı) */
+  notificationHideContent: boolean;
 }
 
 export type SettingsPatch = Partial<Omit<Settings, 'shortcuts'>>;
@@ -120,6 +124,8 @@ export const DEFAULT_SETTINGS: Settings = {
   shareBattery: true,
   autoConnect: true,
   onboarded: true,
+  notificationMirror: true,
+  notificationHideContent: false,
 };
 
 export type TroubleshootId = 'wifi' | 'localNetwork' | 'firewall' | 'discovery' | 'phoneApp';

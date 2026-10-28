@@ -546,6 +546,10 @@ fn start_protocol(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         notifier.clone(),
     )));
     registry.register(Arc::new(plugins::findmyphone::FindMyPhonePlugin));
+    registry.register(Arc::new(plugins::notification::NotificationPlugin::new(
+        shared.clone(),
+        notifier.clone(),
+    )));
     registry.register(Arc::new(plugins::telephony::TelephonyPlugin::new(
         shared,
         notifier,

@@ -156,6 +156,10 @@
     "shareBatterySub": "Telefonda bilgisayarın şarjını görürsünüz.",
     "autoConnect": "Aynı ağda otomatik bağlan",
     "autoConnectSub": "Kapalıysa bağlantıyı elle başlatırsınız.",
+    "mirrorNotifications": "Telefon bildirimlerini göster",
+    "mirrorNotificationsSub": "Telefondaki bildirimler bu bilgisayarda sistem bildirimi olarak çıkar. Telefonda KDE Connect'e bildirim erişimi vermelisiniz.",
+    "hideNotificationContent": "Bildirim içeriğini gizle",
+    "hideNotificationContentSub": "Yalnızca uygulama adı ve \"yeni bildirim\" görünür.",
     "unpair": "Eşleşmeyi kaldır…",
     "noDevice": "Henüz eşleşmiş cihaz yok.",
     "troubleshootRow": "Bağlantı sorunları",
@@ -302,6 +306,7 @@
     "fallbackIp": "girilen adres"
   },
   "notify": {
+    "mirrorGeneric": "yeni bildirim",
     "trayOpen": "Tatar'ı aç",
     "trayQuit": "Tatar'tan çık",
     "startFailedTitle": "Tatar başlatılamadı",

@@ -156,6 +156,10 @@
     "shareBatterySub": "You will see the computer’s charge on your phone.",
     "autoConnect": "Connect automatically on the same network",
     "autoConnectSub": "If off, you start the connection manually.",
+    "mirrorNotifications": "Show phone notifications",
+    "mirrorNotificationsSub": "Notifications from your phone appear as system notifications here. Grant KDE Connect notification access on the phone.",
+    "hideNotificationContent": "Hide notification content",
+    "hideNotificationContentSub": "Only the app name and “new notification” are shown.",
     "unpair": "Unpair…",
     "noDevice": "No paired devices yet.",
     "troubleshootRow": "Connection problems",
@@ -302,6 +306,7 @@
     "fallbackIp": "the entered address"
   },
   "notify": {
+    "mirrorGeneric": "new notification",
     "trayOpen": "Open Tatar",
     "trayQuit": "Quit Tatar",
     "startFailedTitle": "Tatar couldn't start",

@@ -271,6 +271,28 @@ function DeviceTab({ device, onUnpair }: { device: Device | undefined; onUnpair:
             label={t('settings.autoConnect')}
           />
         </div>
+        <div className="setrow">
+          <span className="stack">
+            <span>{t('settings.mirrorNotifications')}</span>
+            <span className="sub">{t('settings.mirrorNotificationsSub')}</span>
+          </span>
+          <Switch
+            checked={s.notificationMirror}
+            onChange={(v) => void actions.updateSettings({ notificationMirror: v })}
+            label={t('settings.mirrorNotifications')}
+          />
+        </div>
+        <div className="setrow">
+          <span className="stack">
+            <span>{t('settings.hideNotificationContent')}</span>
+            <span className="sub">{t('settings.hideNotificationContentSub')}</span>
+          </span>
+          <Switch
+            checked={s.notificationHideContent}
+            onChange={(v) => void actions.updateSettings({ notificationHideContent: v })}
+            label={t('settings.hideNotificationContent')}
+          />
+        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
