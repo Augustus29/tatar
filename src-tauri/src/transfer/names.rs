@@ -235,6 +235,14 @@ fn move_no_clobber(part: &Path, target: &Path) -> io::Result<()> {
             _ => e,
         });
     }
+    #[cfg(not(windows))]
+    return copy_no_clobber(part, target);
+}
+
+/// Atomik "yoksa taşı" olmayan sistemler için: `create_new` ile açılmış hedefe kopyala,
+/// sonra `part`'ı sil.
+#[cfg(not(windows))]
+fn copy_no_clobber(part: &Path, target: &Path) -> io::Result<()> {
     let mut dst = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
